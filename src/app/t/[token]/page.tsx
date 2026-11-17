@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { Brand } from "@/components/Brand";
 import { Loading } from "@/components/ui";
@@ -59,6 +60,9 @@ async function Candidate({ params }: { params: Promise<{ token: string }> }) {
           {verified ? `Thanks, ${member.name}. ` : ""}The answers for “{test.title}” have been submitted. Your reviewer will share the
           results with you.
         </p>
+        <Link href="/" className="btn btn-primary mt-4 no-underline">
+          Go to home page
+        </Link>
       </Notice>
     );
   }

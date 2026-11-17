@@ -22,30 +22,6 @@
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0f1115;
-    --surface: #171a21;
-    --surface-2: #1f232c;
-    --line: #2c323d;
-    --fg: #e8eaee;
-    --muted: #9aa3b2;
-    --primary: #7c93ff;
-    --primary-hover: #95a8ff;
-    --on-primary: #0f1115;
-    --success: #5fd391;
-    --success-soft: #12301f;
-    --danger: #ff8a80;
-    --danger-soft: #3a1614;
-    --warning: #ffcb5c;
-    --warning-soft: #352a0c;
-    --info-soft: #1c2340;
-    --chevron-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa3b2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-    --chevron-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa3b2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 15l6-6 6 6'/%3E%3C/svg%3E");
-    color-scheme: dark;
-  }
-}
-
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
@@ -236,5 +212,45 @@
 
   .option {
     @apply flex cursor-pointer items-start gap-2.5 rounded-md border border-line bg-surface px-3 py-2.5 has-checked:border-primary has-checked:bg-info-soft;
+  }
+}
+
+@layer components {
+  .auth-form .label {
+    color: #3a2e28;
+  }
+
+  .auth-form input[type="text"],
+  .auth-form input[type="email"],
+  .auth-form input[type="password"] {
+    min-height: 46px;
+    border-radius: 10px;
+    border-color: #e2d8c9;
+    background: #fffdf9;
+    padding-left: 0.9rem;
+    padding-right: 0.9rem;
+  }
+
+  .auth-form input:focus-visible {
+    outline: 2px solid #a84a2a;
+    outline-offset: 1px;
+    border-color: #a84a2a;
+  }
+
+  .auth-form .btn-primary {
+    min-height: 46px;
+    border-radius: 10px;
+    border-color: #a84a2a;
+    background: #a84a2a;
+    color: #ffffff;
+    font-size: 15px;
+  }
+
+  .auth-form .btn-primary:hover {
+    background: #8f3e22;
+  }
+
+  .auth-form .text-primary {
+    color: #a84a2a;
   }
 }

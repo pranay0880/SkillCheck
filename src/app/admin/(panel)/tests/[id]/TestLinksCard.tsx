@@ -90,6 +90,16 @@ function LinkRow({ testId, link, emailReady }: { testId: string; link: LinkView;
   const [copied, setCopied] = useState(false);
   const [pending, startTransition] = useTransition();
   const url = `${origin}/join/${link.code}`;
+  let emailBlockedReason: string | null = null;
+  if (!emailReady) emailBlockedReason = "Email is not set up (RESEND_API_KEY and EMAIL_FROM).";
+  else if (!link.enabled) emailBlockedReason = "Turn the link on to email it.";
+  else if (link.eligibleCount === 0) emailBlockedReason = "No employees match this link's audience.";
+  else if (link.pendingCount === 0) {
+    emailBlockedReason =
+      link.eligibleCount === 1
+        ? "Nothing to send: this employee has already submitted."
+        : "Nothing to send: everyone in this link's audience has already submitted.";
+  }
 
   const run = (action: () => Promise<ActionResult>, confirmText?: string) => {
     if (confirmText && !window.confirm(confirmText)) return;
@@ -131,7 +141,9 @@ function LinkRow({ testId, link, emailReady }: { testId: string; link: LinkView;
         <button
           type="button"
           className="btn btn-sm btn-primary"
-          disabled={pending || !link.enabled || !emailReady || link.pendingCount === 0}
+          disabled={pending || emailBlockedReason !== null}
+          title={emailBlockedReason ?? undefined}
+          aria-describedby={emailBlockedReason ? `email-reason-${link.code}` : undefined}
           onClick={() =>
             run(
               () => emailTestLink(testId, link.code),
@@ -154,6 +166,11 @@ function LinkRow({ testId, link, emailReady }: { testId: string; link: LinkView;
         >
           Delete
         </button>
+        {emailBlockedReason && !result?.message && (
+          <span id={`email-reason-${link.code}`} className="text-[13px] text-muted">
+            {emailBlockedReason}
+          </span>
+        )}
         {result?.message && (
           <span role="status" className={`text-sm ${result.ok ? "text-success" : "text-danger"}`}>
             {result.message}

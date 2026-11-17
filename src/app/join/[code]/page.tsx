@@ -1,28 +1,33 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { Brand } from "@/components/Brand";
-import { Loading } from "@/components/ui";
+import { AuthShell } from "@/components/AuthShell";
 import { testsCol } from "@/lib/db";
 import { pluralize } from "@/lib/format";
 import { JoinForm } from "./JoinForm";
 
-export const metadata: Metadata = { title: "Join test", referrer: "no-referrer" };
+export const metadata: Metadata = { title: "Start your test", referrer: "no-referrer" };
+
+const SIDE = {
+  sideTitle: "Ready for your assessment?",
+  sideText: "Confirm it's you with your work email, employee ID and a code we send to your inbox.",
+  sidePoints: ["Use a laptop or desktop computer", "Set aside enough time: the timer doesn't pause", "Read the instructions before you press Start"],
+};
 
 export default function JoinPage({ params }: PageProps<"/join/[code]">) {
   return (
-    <>
-      <header className="border-b border-line bg-surface">
-        <div className="mx-auto max-w-6xl px-4 py-3">
-          <Brand />
-        </div>
-      </header>
-      <main id="main" className="mx-auto max-w-md px-4 py-10">
-        <Suspense fallback={<Loading />}>
-          <Join params={params} />
-        </Suspense>
-      </main>
-    </>
+    <Suspense
+      fallback={
+        <AuthShell {...SIDE} title="Loading your test…">
+          <p role="status" className="m-0" style={{ color: "#75665b" }}>
+            One moment.
+          </p>
+        </AuthShell>
+      }
+    >
+      <Join params={params} />
+    </Suspense>
   );
 }
 
@@ -32,30 +37,44 @@ async function Join({ params }: { params: Promise<{ code: string }> }) {
   const test = /^[\w-]{10,40}$/.test(code)
     ? await (await testsCol()).findOne(
         { links: { $elemMatch: { code, enabled: true } } },
-        { projection: { title: 1, description: 1, durationMinutes: 1, questionIds: 1 } },
+        { projection: { title: 1, durationMinutes: 1, questionIds: 1 } },
       )
     : null;
 
   if (!test) {
     return (
-      <div className="card">
-        <h1 className="mb-2 text-xl">Link not active</h1>
-        <p className="text-muted">This test link is not valid or has been turned off. Please check with your admin.</p>
-      </div>
+      <AuthShell
+        {...SIDE}
+        title="Link not active"
+        subtitle="This test link isn't valid, or it has been turned off."
+        footer={
+          <Link href="/" className="font-medium" style={{ color: "#a84a2a" }}>
+            Back to home
+          </Link>
+        }
+      >
+        <p className="m-0">Please check the link in your email, or ask your team lead to send it again.</p>
+      </AuthShell>
     );
   }
 
   return (
-    <div className="card p-6">
-      <h1 className="mb-1 text-xl">{test.title}</h1>
-      <p className="mb-4 text-sm text-muted">
-        {pluralize(test.questionIds.length, "question")} · {test.durationMinutes} minutes
-      </p>
-      <p className="mb-5">
-        Enter your employee email and employee ID. We will email you a one-time code to confirm it is you. You will see the
-        instructions before the timer starts.
-      </p>
+    <AuthShell
+      {...SIDE}
+      title={test.title}
+      subtitle={
+        <span className="flex flex-wrap gap-2">
+          <span className="rounded-full px-3 py-1 text-[13px]" style={{ background: "#f5efe4", color: "#3a2e28" }}>
+            {pluralize(test.questionIds.length, "question")}
+          </span>
+          <span className="rounded-full px-3 py-1 text-[13px]" style={{ background: "#f5efe4", color: "#3a2e28" }}>
+            {test.durationMinutes} minutes
+          </span>
+        </span>
+      }
+      footer="You'll see the instructions before the timer starts."
+    >
       <JoinForm code={code} />
-    </div>
+    </AuthShell>
   );
 }
