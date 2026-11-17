@@ -1,0 +1,240 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #f0f2f5;
+  --line: #dde1e7;
+  --fg: #16191f;
+  --muted: #5b6472;
+  --primary: #3b5bdb;
+  --primary-hover: #304bc0;
+  --on-primary: #ffffff;
+  --success: #1f7a43;
+  --success-soft: #e3f4ea;
+  --danger: #b42318;
+  --danger-soft: #fdecea;
+  --warning: #8a5a00;
+  --warning-soft: #fff4d6;
+  --info-soft: #e8edff;
+  --chevron-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b6472' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  --chevron-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b6472' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 15l6-6 6 6'/%3E%3C/svg%3E");
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1115;
+    --surface: #171a21;
+    --surface-2: #1f232c;
+    --line: #2c323d;
+    --fg: #e8eaee;
+    --muted: #9aa3b2;
+    --primary: #7c93ff;
+    --primary-hover: #95a8ff;
+    --on-primary: #0f1115;
+    --success: #5fd391;
+    --success-soft: #12301f;
+    --danger: #ff8a80;
+    --danger-soft: #3a1614;
+    --warning: #ffcb5c;
+    --warning-soft: #352a0c;
+    --info-soft: #1c2340;
+    --chevron-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa3b2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    --chevron-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa3b2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 15l6-6 6 6'/%3E%3C/svg%3E");
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-on-primary: var(--on-primary);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-info-soft: var(--info-soft);
+  --font-sans: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+
+@layer base {
+  body {
+    @apply bg-bg text-fg font-sans text-[15px] leading-relaxed antialiased;
+  }
+
+  h1 {
+    @apply text-2xl font-bold leading-tight;
+  }
+
+  h2 {
+    @apply text-lg font-semibold leading-snug;
+  }
+
+  h3 {
+    @apply text-base font-semibold;
+  }
+
+  a {
+    @apply text-primary;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  select,
+  textarea {
+    @apply w-full min-h-[38px] rounded-md border border-line bg-surface px-2.5 py-2 text-fg;
+  }
+
+  textarea {
+    @apply min-h-[90px] resize-y;
+  }
+
+  select:not([multiple]) {
+    appearance: none;
+    padding-right: 2.5rem;
+    background-image: var(--chevron-down);
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem 1rem;
+    cursor: pointer;
+  }
+
+  select:not([multiple]):open {
+    background-image: var(--chevron-up);
+  }
+
+  select:not([multiple]):hover {
+    @apply border-muted;
+  }
+
+  fieldset {
+    @apply mb-4 rounded-md border border-line px-4 pb-3 pt-2;
+  }
+
+  legend {
+    @apply px-1 text-sm font-semibold;
+  }
+
+  pre {
+    @apply mb-3 overflow-x-auto whitespace-pre-wrap rounded-md border border-line bg-surface-2 p-3 font-mono text-[13px];
+  }
+
+  code {
+    @apply font-mono text-[0.9em];
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex min-h-[38px] cursor-pointer items-center justify-center gap-1.5 rounded-md border border-line bg-surface px-4 py-2 text-sm font-semibold text-fg no-underline transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-55;
+  }
+
+  .btn-primary {
+    @apply border-primary bg-primary text-on-primary hover:bg-primary-hover;
+  }
+
+  .btn-danger {
+    @apply border-danger text-danger hover:bg-danger-soft;
+  }
+
+  .btn-sm {
+    @apply min-h-[30px] px-2.5 py-1 text-[13px];
+  }
+
+  .card {
+    @apply mb-4 rounded-xl border border-line bg-surface p-5 shadow-sm;
+  }
+
+  .label {
+    @apply text-sm font-semibold;
+  }
+
+  .hint {
+    @apply text-[13px] text-muted;
+  }
+
+  .field {
+    @apply mb-4 flex flex-col gap-1;
+  }
+
+  .badge {
+    @apply inline-block whitespace-nowrap rounded-full border border-line bg-surface-2 px-2 py-0.5 text-xs font-semibold text-muted;
+  }
+
+  .badge-success {
+    @apply border-transparent bg-success-soft text-success;
+  }
+
+  .badge-warning {
+    @apply border-transparent bg-warning-soft text-warning;
+  }
+
+  .badge-info {
+    @apply border-transparent bg-info-soft text-primary;
+  }
+
+  .badge-danger {
+    @apply border-transparent bg-danger-soft text-danger;
+  }
+
+  .alert {
+    @apply mb-4 rounded-md border px-3.5 py-2.5;
+  }
+
+  .alert-error {
+    @apply border-danger bg-danger-soft text-danger;
+  }
+
+  .alert-success {
+    @apply border-success bg-success-soft text-success;
+  }
+
+  .alert-info {
+    @apply border-line bg-info-soft;
+  }
+
+  .alert-warning {
+    @apply border-warning bg-warning-soft text-warning;
+  }
+
+  .table-wrap {
+    @apply relative overflow-x-auto rounded-xl border border-line bg-surface;
+  }
+
+  .table-wrap table {
+    @apply w-full border-collapse;
+  }
+
+  .table-wrap th {
+    @apply border-b border-line bg-surface-2 px-3.5 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted;
+  }
+
+  .table-wrap td {
+    @apply border-b border-line px-3.5 py-2.5 align-top;
+  }
+
+  .table-wrap tr:last-child td {
+    @apply border-b-0;
+  }
+
+  .option {
+    @apply flex cursor-pointer items-start gap-2.5 rounded-md border border-line bg-surface px-3 py-2.5 has-checked:border-primary has-checked:bg-info-soft;
+  }
+}
