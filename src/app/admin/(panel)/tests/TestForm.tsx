@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { Level, OrderMode, QuestionType } from "@/lib/types";
+import type { CatalogRole, Level, OrderMode, QuestionType } from "@/lib/types";
 import { sortSkills, type Skill } from "@/data/skills";
 import { TYPE_LABEL } from "@/components/ui";
 import { saveTest } from "../../actions";
@@ -40,6 +40,7 @@ interface TestFormProps {
   id?: string;
   initial?: TestFormValue;
   questions: PickableQuestion[];
+  roles: CatalogRole[];
 }
 
 export function TestForm(props: TestFormProps) {
@@ -47,7 +48,7 @@ export function TestForm(props: TestFormProps) {
   return <TestFormBody key={version} {...props} onCreated={() => setVersion((value) => value + 1)} />;
 }
 
-function TestFormBody({ id, initial, questions, onCreated }: TestFormProps & { onCreated: () => void }) {
+function TestFormBody({ id, initial, questions, roles, onCreated }: TestFormProps & { onCreated: () => void }) {
   const start = initial ?? EMPTY;
   const router = useRouter();
   const [title, setTitle] = useState(start.title);
@@ -60,29 +61,35 @@ function TestFormBody({ id, initial, questions, onCreated }: TestFormProps & { o
   const [levelFilter, setLevelFilter] = useState<"" | Level>("");
   const [typeFilter, setTypeFilter] = useState<"" | QuestionType>("");
   const [skillFilter, setSkillFilter] = useState<Skill[]>([]);
+  const [roleFilter, setRoleFilter] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  const availableSkills = useMemo(() => sortSkills(questions.map((q) => q.skill)), [questions]);
+  const roleSkills = useMemo(() => roles.find((role) => role.id === roleFilter)?.skills ?? null, [roles, roleFilter]);
+  const availableSkills = useMemo(
+    () => sortSkills(questions.map((q) => q.skill)).filter((skill) => !roleSkills || roleSkills.includes(skill)),
+    [questions, roleSkills],
+  );
   const visible = useMemo(
     () =>
       questions.filter(
         (q) =>
           (!levelFilter || q.level === levelFilter) &&
           (!typeFilter || q.type === typeFilter) &&
-          (skillFilter.length === 0 || skillFilter.includes(q.skill)),
+          (skillFilter.length > 0 ? skillFilter.includes(q.skill) : !roleSkills || roleSkills.includes(q.skill)),
       ),
-    [questions, levelFilter, typeFilter, skillFilter],
+    [questions, levelFilter, typeFilter, skillFilter, roleSkills],
   );
   const chosen = questions.filter((q) => selected.includes(q.id));
   const totalPoints = chosen.reduce((sum, q) => sum + q.points, 0);
   const mcqCount = chosen.filter((q) => q.type === "mcq").length;
   const writtenCount = chosen.filter((q) => q.type === "text").length;
   const codeCount = chosen.filter((q) => q.type === "code").length;
-  const chosenSkills = sortSkills(chosen.map((q) => q.skill)).map((skill) => ({ skill, count: chosen.filter((q) => q.skill === skill).length })).filter(
-    (row) => row.count > 0,
-  );
+  const chosenSkills = sortSkills(chosen.map((q) => q.skill)).map((skill) => ({
+    skill,
+    count: chosen.filter((q) => q.skill === skill).length,
+  }));
 
   const toggleSkill = (skill: Skill) =>
     setSkillFilter((current) => (current.includes(skill) ? current.filter((value) => value !== skill) : [...current, skill]));
@@ -210,10 +217,37 @@ function TestFormBody({ id, initial, questions, onCreated }: TestFormProps & { o
 
       <fieldset>
         <legend>Questions</legend>
+        <div className="field mb-3 max-w-xs">
+          <label className="label" htmlFor="pick-role">
+            Role
+          </label>
+          <select
+            id="pick-role"
+            value={roleFilter}
+            onChange={(e) => {
+              setRoleFilter(e.target.value);
+              setSkillFilter([]);
+            }}
+            aria-describedby="pick-role-hint"
+          >
+            <option value="">All roles</option>
+            {roles.map((role) => (
+              <option key={role.id} value={role.id}>
+                {role.name}
+              </option>
+            ))}
+          </select>
+          <span id="pick-role-hint" className="hint">
+            Shows only that role&apos;s skills and questions.
+          </span>
+        </div>
         {availableSkills.length > 0 && (
           <div className="mb-3">
             <p id="pick-skills-label" className="label mb-1.5">
-              Skills <span className="font-normal text-muted">(none selected = all skills)</span>
+              Skills{" "}
+              <span className="font-normal text-muted">
+                (none selected = {roleSkills ? "all skills for this role" : "all skills"})
+              </span>
             </p>
             <div role="group" aria-labelledby="pick-skills-label" className="flex flex-wrap gap-1.5">
               {availableSkills.map((skill) => (

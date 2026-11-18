@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth";
 import { loadPickableQuestions } from "@/lib/admin-data";
+import { loadCatalog } from "@/lib/catalog";
 import { Loading, PageHead } from "@/components/ui";
 import { TestForm } from "../TestForm";
 
@@ -20,5 +21,6 @@ export default function NewTestPage() {
 
 async function Form() {
   await requireAdmin();
-  return <TestForm questions={await loadPickableQuestions()} />;
+  const [questions, { roles }] = await Promise.all([loadPickableQuestions(), loadCatalog()]);
+  return <TestForm questions={questions} roles={roles} />;
 }

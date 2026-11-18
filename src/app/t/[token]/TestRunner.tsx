@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { CodeEditor } from "@/components/CodeEditor";
 import { runCode, type RunOutcome } from "@/lib/code-runner";
+import { formatShownValue, formatValue, parameterNames } from "@/lib/case-display";
 import {
   TEXT_ANSWER_MAX_LENGTH,
   type PublicCodeQuestion,
@@ -325,6 +326,38 @@ export function TestRunner({
   };
 
   const unansweredCount = questions.length - answeredCount;
+  const onLastQuestion = index === questions.length - 1;
+
+  const confirmBox = (
+    <div className="rounded-md border border-warning bg-warning-soft p-3" role="alertdialog" aria-labelledby="confirm-submit-title">
+      <p id="confirm-submit-title" className="mb-1 font-semibold text-warning">
+        Submit your test?
+      </p>
+      <p className="mb-3 text-sm">
+        {unansweredCount > 0
+          ? `${unansweredCount} question${unansweredCount === 1 ? " is" : "s are"} unanswered. `
+          : "All questions are answered. "}
+        You cannot change answers after submitting.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          className="btn btn-sm btn-primary"
+          disabled={submitting}
+          onClick={() => {
+            setConfirming(false);
+            void submit();
+          }}
+          autoFocus
+        >
+          Yes, submit
+        </button>
+        <button type="button" className="btn btn-sm" onClick={() => setConfirming(false)}>
+          Keep working
+        </button>
+      </div>
+    </div>
+  );
 
   const low = remaining !== null && remaining < LOW_TIME_MS;
   const key = preview?.answerKey[question.id];
@@ -439,36 +472,8 @@ export function TestRunner({
           {saveState === "saved" && "All changes saved"}
           {saveState === "error" && <span className="text-danger">Save failed. Check your connection.</span>}
         </p>
-        {confirming ? (
-          <div className="rounded-md border border-warning bg-warning-soft p-3" role="alertdialog" aria-labelledby="confirm-submit-title">
-            <p id="confirm-submit-title" className="mb-1 font-semibold text-warning">
-              Submit your test?
-            </p>
-            <p className="mb-3 text-sm">
-              {unansweredCount > 0
-                ? `${unansweredCount} question${unansweredCount === 1 ? " is" : "s are"} unanswered. `
-                : "All questions are answered. "}
-              You cannot change answers after submitting.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="btn btn-sm btn-primary"
-                disabled={submitting}
-                onClick={() => {
-                  setConfirming(false);
-                  void submit();
-                }}
-                autoFocus
-              >
-                Yes, submit
-              </button>
-              <button type="button" className="btn btn-sm" onClick={() => setConfirming(false)}>
-                Keep working
-              </button>
-            </div>
-          </div>
-        ) : (
+        {confirming && confirmBox}
+        {!confirming && !onLastQuestion && (
           <button type="button" className="btn btn-primary w-full" onClick={confirmSubmit} disabled={submitting}>
             {submitting ? "Submitting…" : isPreview ? "Submit (preview)" : "Submit test"}
           </button>
@@ -536,18 +541,22 @@ export function TestRunner({
           )}
         </div>
 
-        <div className="flex justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <button type="button" className="btn" onClick={() => setIndex((value) => value - 1)} disabled={index === 0}>
             Previous
           </button>
-          <button
-            type="button"
-            className="btn"
-            onClick={() => setIndex((value) => value + 1)}
-            disabled={index === questions.length - 1}
-          >
-            Next
-          </button>
+          {!onLastQuestion ? (
+            <button type="button" className="btn" onClick={() => setIndex((value) => value + 1)}>
+              Next
+            </button>
+          ) : (
+            <span className="flex flex-wrap items-center justify-end gap-3">
+              <span className="text-sm text-muted">This is the last question.</span>
+              <button type="button" className="btn btn-primary" onClick={confirmSubmit} disabled={submitting || confirming}>
+                {submitting ? "Submitting…" : isPreview ? "Submit (preview)" : "Submit test"}
+              </button>
+            </span>
+          )}
         </div>
       </section>
     </div>
@@ -621,6 +630,17 @@ function McqAnswer({
   );
 }
 
+function CaseRow({ label, value }: { label: ReactNode; value: string }) {
+  return (
+    <>
+      <dt className="pt-1 font-medium text-muted">{label}</dt>
+      <dd className="m-0 min-w-0">
+        <pre className="m-0 max-h-48 overflow-auto bg-surface px-2.5 py-1.5">{value}</pre>
+      </dd>
+    </>
+  );
+}
+
 function CodeAnswer({
   question,
   code,
@@ -632,6 +652,7 @@ function CodeAnswer({
 }) {
   const [outcome, setOutcome] = useState<RunOutcome | null>(null);
   const [running, setRunning] = useState(false);
+  const names = parameterNames(question.starterCode, question.functionName, question.sampleCases[0]?.args.length ?? 0);
 
   const run = async () => {
     setRunning(true);
@@ -665,32 +686,41 @@ function CodeAnswer({
         )}
       </div>
 
-      <ul className="mb-3 flex flex-col gap-1.5">
+      <p className="mb-2 text-sm text-muted">
+        Each example calls <code>{question.functionName}({names.join(", ")})</code> with the inputs shown, and checks that it returns
+        the expected output.
+      </p>
+      <ol className="mb-3 flex list-none flex-col gap-2 p-0">
         {question.sampleCases.map((testCase, position) => {
           const result = outcome?.results[position];
-          const tone = !result ? "border-line" : result.passed ? "border-success bg-success-soft" : "border-danger bg-danger-soft";
+          const tone = !result ? "border-line bg-surface" : result.passed ? "border-success bg-success-soft" : "border-danger bg-danger-soft";
           return (
-            <li key={position} className={`break-words rounded-md border px-3 py-2 text-sm ${tone}`}>
-              <code>
-                {question.functionName}({testCase.args.map((arg) => JSON.stringify(arg)).join(", ")})
-              </code>{" "}
-              → expected <code>{JSON.stringify(testCase.expected)}</code>
-              {result && (
-                <span className="block">
-                  {result.passed ? "Passed" : "Failed"}
-                  {result.actual !== undefined && !result.passed && (
-                    <>
-                      {" "}
-                      · got <code>{result.actual}</code>
-                    </>
-                  )}
-                  {result.error && <> · {result.error}</>}
-                </span>
-              )}
+            <li key={position} className={`rounded-lg border p-3 text-sm ${tone}`}>
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <span className="font-semibold">Example {position + 1}</span>
+                {result && (
+                  <span className={`badge ${result.passed ? "badge-success" : "badge-danger"}`}>{result.passed ? "Passed" : "Failed"}</span>
+                )}
+              </div>
+              <dl className="m-0 grid grid-cols-1 gap-x-4 gap-y-1.5 sm:grid-cols-[max-content_minmax(0,1fr)]">
+                {testCase.args.map((arg, index) => (
+                  <CaseRow key={names[index]} label={<>Input <code>{names[index]}</code></>} value={formatValue(arg)} />
+                ))}
+                <CaseRow label="Expected output" value={formatValue(testCase.expected)} />
+                {result && !result.passed && result.actual !== undefined && (
+                  <CaseRow label="Your output" value={formatShownValue(result.actual)} />
+                )}
+                {result?.error && (
+                  <>
+                    <dt className="font-medium text-muted">Error</dt>
+                    <dd className="m-0 text-danger">{result.error}</dd>
+                  </>
+                )}
+              </dl>
             </li>
           );
         })}
-      </ul>
+      </ol>
 
       {outcome && outcome.logs.length > 0 && (
         <details>

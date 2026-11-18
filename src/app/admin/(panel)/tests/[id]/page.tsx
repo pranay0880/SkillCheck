@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/auth";
 import { resultsCol, testsCol, usersCol } from "@/lib/db";
 import { toObjectId } from "@/lib/ids";
 import { loadPickableQuestions } from "@/lib/admin-data";
+import { loadCatalog } from "@/lib/catalog";
 import { formatDateTime } from "@/lib/format";
 import { isEmailConfigured } from "@/lib/email";
 import { ActionButton } from "@/components/ActionButton";
@@ -44,7 +45,7 @@ async function TestDetail({ params }: { params: Promise<{ id: string }> }) {
   const test = objectId ? await (await testsCol()).findOne({ _id: objectId }) : null;
   if (!test || !objectId) notFound();
 
-  const [questions, members, users] = await Promise.all([
+  const [questions, members, users, catalog] = await Promise.all([
     loadPickableQuestions(),
     (await resultsCol())
       .find(
@@ -54,6 +55,7 @@ async function TestDetail({ params }: { params: Promise<{ id: string }> }) {
       .sort({ createdAt: -1 })
       .toArray(),
     (await usersCol()).find({}, { projection: { name: 1, employeeId: 1, role: 1 } }).sort({ name: 1 }).toArray(),
+    loadCatalog(),
   ]);
 
   const submittedUserIds = new Set(members.filter((member) => member.status === "submitted").map((member) => String(member.userId)));
@@ -145,6 +147,7 @@ async function TestDetail({ params }: { params: Promise<{ id: string }> }) {
       <TestForm
         id={id}
         questions={questions}
+        roles={catalog.roles}
         initial={{
           title: test.title,
           description: test.description,
