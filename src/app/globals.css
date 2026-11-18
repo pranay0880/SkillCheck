@@ -254,3 +254,43 @@
     color: #a84a2a;
   }
 }
+
+@layer components {
+  .report-table {
+    @apply w-full border-collapse;
+  }
+
+  .report-table th,
+  .report-table td {
+    @apply border-b border-line px-3 py-1.5 text-left align-top;
+  }
+
+  .report-table thead th {
+    @apply text-[13px] font-semibold text-muted;
+  }
+
+  .report-code {
+    @apply mb-2 max-h-none overflow-visible text-[12px];
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 12mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+  }
+
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  a {
+    text-decoration: none;
+  }
+}

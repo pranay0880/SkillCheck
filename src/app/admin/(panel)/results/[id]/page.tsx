@@ -71,6 +71,9 @@ async function Review({ params }: { params: Promise<{ id: string }> }) {
         }
         actions={
           <>
+            <Link href={`/admin/report/${id}`} className="btn no-underline">
+              PDF report
+            </Link>
             <ActionButton
               action={deleteMember.bind(null, id)}
               label="Delete result"

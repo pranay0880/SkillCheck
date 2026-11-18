@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { Level, MemberStatus, QuestionType } from "@/lib/types";
+import { MEMBER_STATUS_LABEL, type Level, type MemberStatus, type QuestionType } from "@/lib/types";
 
 export function PageHead({ title, subtitle, actions }: { title: string; subtitle?: ReactNode; actions?: ReactNode }) {
   return (
@@ -39,12 +39,6 @@ export function TypeBadge({ type }: { type: QuestionType }) {
   return <span className="badge">{TYPE_LABEL[type]}</span>;
 }
 
-const STATUS_LABEL: Record<MemberStatus, string> = {
-  invited: "Not started",
-  in_progress: "In progress",
-  submitted: "Submitted",
-};
-
 const STATUS_CLASS: Record<MemberStatus, string> = {
   invited: "",
   in_progress: "badge-warning",
@@ -52,7 +46,7 @@ const STATUS_CLASS: Record<MemberStatus, string> = {
 };
 
 export function StatusBadge({ status }: { status: MemberStatus }) {
-  return <span className={`badge ${STATUS_CLASS[status]}`}>{STATUS_LABEL[status]}</span>;
+  return <span className={`badge ${STATUS_CLASS[status]}`}>{MEMBER_STATUS_LABEL[status]}</span>;
 }
 
 export function Stat({ label, value }: { label: string; value: ReactNode }) {

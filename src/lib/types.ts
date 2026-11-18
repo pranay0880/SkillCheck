@@ -10,6 +10,12 @@ export type QuestionType = (typeof QUESTION_TYPES)[number];
 export const MEMBER_STATUSES = ["invited", "in_progress", "submitted"] as const;
 export type MemberStatus = (typeof MEMBER_STATUSES)[number];
 
+export const MEMBER_STATUS_LABEL: Record<MemberStatus, string> = {
+  invited: "Not started",
+  in_progress: "In progress",
+  submitted: "Submitted",
+};
+
 export interface McqOption {
   id: string;
   text: string;

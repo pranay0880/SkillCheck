@@ -1,13 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import type { Filter } from "mongodb";
 import { requireAdmin } from "@/lib/auth";
-import { membersCol, questionsCol, testsCol } from "@/lib/db";
-import { toObjectId } from "@/lib/ids";
 import { formatDateTime } from "@/lib/format";
-import { summarize } from "@/lib/scoring";
-import { MEMBER_STATUSES, type MemberDoc, type MemberStatus } from "@/lib/types";
+import { loadResults, parseResultsFilter, resultsQueryString, RESULTS_LIMIT } from "@/lib/results";
 import { Empty, Loading, PageHead, StatusBadge } from "@/components/ui";
 import { IntegrityFlags } from "@/components/IntegrityFlags";
 
@@ -28,42 +24,19 @@ export default function ResultsPage({ searchParams }: { searchParams: SearchPara
 
 async function ResultsTable({ searchParams }: { searchParams: SearchParams }) {
   await requireAdmin();
-  const params = await searchParams;
-  const testFilter = typeof params.test === "string" ? toObjectId(params.test) : null;
-  const statusFilter =
-    typeof params.status === "string" && (MEMBER_STATUSES as readonly string[]).includes(params.status)
-      ? (params.status as MemberStatus)
-      : undefined;
-
-  const userFilter = typeof params.user === "string" ? toObjectId(params.user) : null;
-
-  const filter: Filter<MemberDoc> = {};
-  if (testFilter) filter.testId = testFilter;
-  if (userFilter) filter.userId = userFilter;
-  if (statusFilter) filter.status = statusFilter;
-
-  const [tests, members] = await Promise.all([
-    (await testsCol()).find({}, { projection: { title: 1, questionIds: 1 } }).sort({ title: 1 }).toArray(),
-    (await membersCol()).find(filter).sort({ submittedAt: -1, createdAt: -1 }).limit(500).toArray(),
-  ]);
-  const questionIds = Array.from(new Set(members.flatMap((member) => member.questionOrder.map(String))))
-    .map((id) => toObjectId(id))
-    .filter((id) => id !== null);
-  const questions = await (await questionsCol())
-    .find({ _id: { $in: questionIds } }, { projection: { type: 1, points: 1 } })
-    .toArray();
-  const questionById = new Map(questions.map((question) => [String(question._id), question]));
-  const testById = new Map(tests.map((test) => [String(test._id), test]));
+  const filter = parseResultsFilter(await searchParams);
+  const { tests, rows } = await loadResults(filter);
+  const exportHref = `/admin/results/export${resultsQueryString(filter)}`;
 
   return (
     <>
       <form className="mb-4 flex flex-wrap items-end gap-3">
-        {userFilter && <input type="hidden" name="user" value={String(userFilter)} />}
+        {filter.userId && <input type="hidden" name="user" value={filter.userId} />}
         <div className="min-w-[200px]">
           <label className="label mb-1 block" htmlFor="filter-test">
             Test
           </label>
-          <select id="filter-test" name="test" defaultValue={testFilter ? String(testFilter) : ""}>
+          <select id="filter-test" name="test" defaultValue={filter.testId ?? ""}>
             <option value="">All tests</option>
             {tests.map((test) => (
               <option key={String(test._id)} value={String(test._id)}>
@@ -76,7 +49,7 @@ async function ResultsTable({ searchParams }: { searchParams: SearchParams }) {
           <label className="label mb-1 block" htmlFor="filter-status">
             Status
           </label>
-          <select id="filter-status" name="status" defaultValue={statusFilter ?? ""}>
+          <select id="filter-status" name="status" defaultValue={filter.status ?? ""}>
             <option value="">Any status</option>
             <option value="invited">Not started</option>
             <option value="in_progress">In progress</option>
@@ -86,15 +59,20 @@ async function ResultsTable({ searchParams }: { searchParams: SearchParams }) {
         <button className="btn" type="submit">
           Filter
         </button>
-        {userFilter && (
+        {filter.userId && (
           <Link className="btn" href="/admin/results">
             Show all users
           </Link>
         )}
+        {rows.length > 0 && (
+          <a className="btn ml-auto no-underline" href={exportHref} download>
+            Download CSV ({rows.length})
+          </a>
+        )}
       </form>
 
       <div className="table-wrap">
-        {members.length === 0 ? (
+        {rows.length === 0 ? (
           <Empty>No results match.</Empty>
         ) : (
           <table>
@@ -111,12 +89,8 @@ async function ResultsTable({ searchParams }: { searchParams: SearchParams }) {
               </tr>
             </thead>
             <tbody>
-              {members.map((member) => {
+              {rows.map(({ member, testTitle, score }) => {
                 const id = String(member._id);
-                const memberQuestions = member.questionOrder
-                  .map((questionId) => questionById.get(String(questionId)))
-                  .filter((question) => question !== undefined);
-                const score = summarize(memberQuestions, member.answers);
                 return (
                   <tr key={id}>
                     <td>
@@ -126,7 +100,7 @@ async function ResultsTable({ searchParams }: { searchParams: SearchParams }) {
                       <span className="block text-[13px] text-muted">{member.role ?? member.email}</span>
                     </td>
                     <td className="font-mono text-sm">{member.employeeId ?? "—"}</td>
-                    <td>{testById.get(String(member.testId))?.title ?? "Deleted test"}</td>
+                    <td>{testTitle}</td>
                     <td>
                       <StatusBadge status={member.status} />
                     </td>
@@ -159,6 +133,9 @@ async function ResultsTable({ searchParams }: { searchParams: SearchParams }) {
           </table>
         )}
       </div>
+      {rows.length === RESULTS_LIMIT && (
+        <p className="mt-3 text-sm text-muted">Showing the latest {RESULTS_LIMIT} results. Filter by test to narrow the list.</p>
+      )}
     </>
   );
 }
