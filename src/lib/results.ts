@@ -1,6 +1,6 @@
 import "server-only";
 import type { Filter, WithId } from "mongodb";
-import { membersCol, questionsCol, testsCol } from "./db";
+import { resultsCol, questionsCol, testsCol } from "./db";
 import { toObjectId } from "./ids";
 import { summarize, type ScoreSummary } from "./scoring";
 import { MEMBER_STATUSES, type MemberDoc, type MemberStatus, type TestDoc } from "./types";
@@ -57,7 +57,7 @@ export async function loadResults(
 
   const [tests, members] = await Promise.all([
     (await testsCol()).find({}, { projection: { title: 1 } }).sort({ title: 1 }).toArray(),
-    (await membersCol()).find(query).sort({ submittedAt: -1, createdAt: -1 }).limit(RESULTS_LIMIT).toArray(),
+    (await resultsCol()).find(query).sort({ submittedAt: -1, createdAt: -1 }).limit(RESULTS_LIMIT).toArray(),
   ]);
   const questionIds = Array.from(new Set(members.flatMap((member) => member.questionOrder.map(String))))
     .map((id) => toObjectId(id))

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth";
+import { loadCatalog } from "@/lib/catalog";
 import { Loading, PageHead } from "@/components/ui";
 import { UserForm } from "../UserForm";
 
@@ -19,5 +20,6 @@ export default function NewUserPage() {
 
 async function Guarded() {
   await requireAdmin();
-  return <UserForm />;
+  const { roles } = await loadCatalog();
+  return <UserForm roles={roles} />;
 }

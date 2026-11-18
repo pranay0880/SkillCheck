@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import type { Filter } from "mongodb";
 import { requireAdmin } from "@/lib/auth";
-import { membersCol, usersCol } from "@/lib/db";
+import { resultsCol, usersCol } from "@/lib/db";
 import type { UserDoc } from "@/lib/types";
 import { ActionButton } from "@/components/ActionButton";
 import { Empty, Loading, PageHead } from "@/components/ui";
@@ -77,7 +77,7 @@ async function UserList({ searchParams }: { searchParams: SearchParams }) {
   if (skill) filter.skills = skill;
 
   const list = await users.find(filter).sort({ name: 1 }).toArray();
-  const attemptCounts = await (await membersCol())
+  const attemptCounts = await (await resultsCol())
     .aggregate<{ _id: unknown; total: number }>([
       { $match: { userId: { $in: list.map((user) => user._id) } } },
       { $group: { _id: "$userId", total: { $sum: 1 } } },

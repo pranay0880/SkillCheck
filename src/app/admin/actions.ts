@@ -2,13 +2,14 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { refresh } from "next/cache";
+import { refresh, updateTag } from "next/cache";
 import { z } from "zod";
 import { endAdminSession, isCorrectAdminPassword, requireAdmin, startAdminSession } from "@/lib/auth";
-import { membersCol, otpsCol, questionsCol, testsCol, usersCol } from "@/lib/db";
+import { resultsCol, otpsCol, questionsCol, testsCol, usersCol } from "@/lib/db";
 import { toObjectId } from "@/lib/ids";
 import { newToken } from "@/lib/invites";
 import { usersFilterForLink } from "@/lib/audience";
+import { CATALOG_TAG, ensureSkills, findRoleName, resolveSkills } from "@/lib/catalog";
 import { inviteEmail, isEmailConfigured, sendBatch } from "@/lib/email";
 import { firstIssue, questionSchema, testLinkSchema, testSchema, userSchema } from "@/lib/validation";
 import { QUESTION_BANK } from "@/data/question-bank";
@@ -32,6 +33,9 @@ export async function saveQuestion(id: string | null, input: unknown): Promise<A
   await requireAdmin();
   const parsed = questionSchema.safeParse(input);
   if (!parsed.success) return { ok: false, message: firstIssue(parsed.error) };
+  const skill = await resolveSkills([parsed.data.skill]);
+  if (skill.unknown.length > 0) return { ok: false, message: `Unknown skill “${parsed.data.skill}”. Add it on Roles & skills first.` };
+  parsed.data.skill = skill.names[0];
   const now = new Date();
   const col = await questionsCol();
   if (id) {
@@ -67,7 +71,11 @@ export async function importQuestionBank(): Promise<ActionResult> {
   const fresh = QUESTION_BANK.filter((q) => !existing.has(q.title)).map(
     (q) => ({ ...q, createdAt: now, updatedAt: now }) as QuestionDoc,
   );
-  if (fresh.length > 0) await col.insertMany(fresh);
+  if (fresh.length > 0) {
+    await ensureSkills(fresh.map((q) => q.skill), now);
+    await col.insertMany(fresh);
+    updateTag(CATALOG_TAG);
+  }
   refresh();
   return {
     ok: true,
@@ -100,7 +108,7 @@ export async function deleteTest(id: string, confirmedInviteCount: number): Prom
   await requireAdmin();
   const objectId = toObjectId(id);
   if (!objectId) return { ok: false, message: "Test not found." };
-  const members = await membersCol();
+  const members = await resultsCol();
   const invites = await members.countDocuments({ testId: objectId });
   if (invites !== confirmedInviteCount) {
     return {
@@ -122,7 +130,18 @@ export async function saveUser(id: string | null, input: unknown): Promise<Actio
   await requireAdmin();
   const parsed = userSchema.safeParse(input);
   if (!parsed.success) return { ok: false, message: firstIssue(parsed.error) };
-  const data = { ...parsed.data, employeeIdKey: parsed.data.employeeId.toUpperCase() };
+  const role = await findRoleName(parsed.data.role);
+  if (!role) return { ok: false, message: `Unknown role “${parsed.data.role}”. Add it on Roles & skills first.` };
+  const skills = await resolveSkills(parsed.data.skills);
+  if (skills.unknown.length > 0) {
+    return { ok: false, message: `Unknown skill: ${skills.unknown.join(", ")}. Add it on Roles & skills first.` };
+  }
+  const data = {
+    ...parsed.data,
+    role,
+    skills: Array.from(new Set(skills.names)),
+    employeeIdKey: parsed.data.employeeId.toUpperCase(),
+  };
   const now = new Date();
   const users = await usersCol();
   try {
@@ -131,7 +150,7 @@ export async function saveUser(id: string | null, input: unknown): Promise<Actio
       if (!objectId) return { ok: false, message: "User not found." };
       const result = await users.updateOne({ _id: objectId }, { $set: { ...data, updatedAt: now } });
       if (result.matchedCount === 0) return { ok: false, message: "User not found." };
-      await (await membersCol()).updateMany(
+      await (await resultsCol()).updateMany(
         { userId: objectId },
         { $set: { name: data.name, email: data.email, employeeId: data.employeeId, role: data.role, skills: data.skills } },
       );
@@ -154,7 +173,7 @@ export async function deleteUser(id: string): Promise<ActionResult> {
   await requireAdmin();
   const objectId = toObjectId(id);
   if (!objectId) return { ok: false, message: "User not found." };
-  const attempts = await (await membersCol()).countDocuments({ userId: objectId });
+  const attempts = await (await resultsCol()).countDocuments({ userId: objectId });
   if (attempts > 0) {
     return {
       ok: false,
@@ -235,7 +254,7 @@ export async function emailTestLink(testIdInput: string, code: string): Promise<
 
   const audience = await (await usersCol()).find(usersFilterForLink(link)).toArray();
   const submitted = new Set(
-    (await (await membersCol()).find({ testId, status: "submitted" }, { projection: { userId: 1 } }).toArray()).map((member) =>
+    (await (await resultsCol()).find({ testId, status: "submitted" }, { projection: { userId: 1 } }).toArray()).map((member) =>
       String(member.userId),
     ),
   );
@@ -273,7 +292,7 @@ export async function deleteMember(id: string): Promise<ActionResult> {
   await requireAdmin();
   const objectId = toObjectId(id);
   if (!objectId) return { ok: false, message: "Member not found." };
-  await (await membersCol()).deleteOne({ _id: objectId });
+  await (await resultsCol()).deleteOne({ _id: objectId });
   redirect("/admin/results");
 }
 
@@ -289,7 +308,7 @@ export async function saveCodeGrades(memberId: string, input: unknown): Promise<
   const memberObjectId = toObjectId(memberId);
   const parsed = gradesSchema.safeParse(input);
   if (!memberObjectId || !parsed.success) return { ok: false, message: "Invalid grading data." };
-  const members = await membersCol();
+  const members = await resultsCol();
   const member = await members.findOne({ _id: memberObjectId });
   if (!member) return { ok: false, message: "Member not found." };
   const questionIds = parsed.data.map((grade) => toObjectId(grade.questionId)).filter((value) => value !== null);
@@ -329,7 +348,7 @@ export async function setManualScore(
     score === null
       ? { $unset: { [`${path}.manualScore`]: true as const }, $set: { [`${path}.reviewerNote`]: note.slice(0, 1000) } }
       : { $set: { [`${path}.manualScore`]: score, [`${path}.reviewerNote`]: note.slice(0, 1000), [`${path}.savedAt`]: new Date() } };
-  await (await membersCol()).updateOne({ _id: memberObjectId }, update);
+  await (await resultsCol()).updateOne({ _id: memberObjectId }, update);
   refresh();
   return { ok: true, message: "Saved." };
 }

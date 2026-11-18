@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { Bookshelf, serif, WARM } from "@/components/warm-theme";
-import { SKILLS } from "@/data/skills";
+import { DEFAULT_ROLES } from "@/data/skills";
+import { loadPublicCatalog } from "@/lib/catalog";
 
 export const metadata: Metadata = {
   title: { absolute: "SkillCheck" },
@@ -97,6 +98,36 @@ function SectionTitle({ id, eyebrow, children }: { id: string; eyebrow: string; 
         {children}
       </h2>
     </div>
+  );
+}
+
+async function LiveRoleSkills() {
+  const { roles } = await loadPublicCatalog();
+  return <RoleSkills roles={roles.filter((role) => role.skills.length > 0)} />;
+}
+
+function RoleSkills({ roles }: { roles: { name: string; skills: string[] }[] }) {
+  return (
+    <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 md:grid-cols-2">
+      {roles.map((role, index) => {
+        const tint = SKILL_COLORS[index % SKILL_COLORS.length];
+        return (
+          <li key={role.name} className="rounded-2xl p-6 shadow-[0_2px_12px_rgba(58,46,40,0.06)]" style={{ background: PANEL_BG }}>
+            <h3 className={`${serif} mb-3 flex items-center gap-2.5 text-xl`} style={{ color: C.ink }}>
+              <span aria-hidden="true" className="h-3 w-3 rounded-full" style={{ background: tint }} />
+              {role.name}
+            </h3>
+            <ul className="m-0 flex list-none flex-wrap gap-2 p-0" aria-label={`${role.name} skills`}>
+              {role.skills.map((skill) => (
+                <li key={skill} className="rounded-md px-3 py-1.5 text-[14px] font-medium" style={{ background: tint, color: C.ink }}>
+                  {skill}
+                </li>
+              ))}
+            </ul>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -195,21 +226,13 @@ export default function HomePage() {
         <section aria-labelledby="skills-title" className="px-6 py-20">
           <div className="mx-auto max-w-5xl">
             <SectionTitle id="skills-title" eyebrow="What we assess">
-              The skills you use every day
+              Skills for every role
             </SectionTitle>
-            <ul className="m-0 flex list-none flex-wrap justify-center gap-2.5 p-0">
-              {SKILLS.map((skill, index) => (
-                <li
-                  key={skill}
-                  className="rounded-md px-4 py-2 text-[15px] font-medium"
-                  style={{ background: SKILL_COLORS[index % SKILL_COLORS.length], color: C.ink }}
-                >
-                  {skill}
-                </li>
-              ))}
-            </ul>
+            <Suspense fallback={<RoleSkills roles={DEFAULT_ROLES} />}>
+              <LiveRoleSkills />
+            </Suspense>
             <p className="mt-8 text-center text-[15px]" style={{ color: C.muted }}>
-              Questions are multiple choice, short written answers and simple coding tasks in the browser.
+              Your test covers the skills for your role: multiple choice, short written answers and, for developers, simple coding tasks.
             </p>
           </div>
         </section>

@@ -60,6 +60,17 @@ const LINKS: { href: string; label: string; icon: ReactNode }[] = [
     ),
   },
   {
+    href: "/admin/roles",
+    label: "Roles & skills",
+    icon: (
+      <Icon>
+        <path d="M12 3l8 4.5-8 4.5-8-4.5z" />
+        <path d="M4 12l8 4.5 8-4.5" />
+        <path d="M4 16.5L12 21l8-4.5" />
+      </Icon>
+    ),
+  },
+  {
     href: "/admin/tests",
     label: "Tests",
     icon: (

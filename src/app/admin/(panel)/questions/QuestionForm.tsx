@@ -4,7 +4,7 @@ import { useId, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { runCode, type RunOutcome } from "@/lib/code-runner";
 import type { Level, McqOption, QuestionType, TestCase } from "@/lib/types";
-import { SKILLS, type Skill } from "@/data/skills";
+import type { Skill } from "@/data/skills";
 import { saveQuestion } from "../../actions";
 
 export interface QuestionFormValue {
@@ -85,6 +85,7 @@ function nextOptionId(options: McqOption[]): string {
 interface QuestionFormProps {
   id?: string;
   initial?: QuestionFormValue;
+  skills: string[];
 }
 
 export function QuestionForm(props: QuestionFormProps) {
@@ -92,7 +93,7 @@ export function QuestionForm(props: QuestionFormProps) {
   return <QuestionFormBody key={version} {...props} onCreated={() => setVersion((value) => value + 1)} />;
 }
 
-function QuestionFormBody({ id, initial, onCreated }: QuestionFormProps & { onCreated: () => void }) {
+function QuestionFormBody({ id, initial, skills, onCreated }: QuestionFormProps & { onCreated: () => void }) {
   const start = initial ?? EMPTY;
   const router = useRouter();
   const formId = useId();
@@ -222,7 +223,7 @@ function QuestionFormBody({ id, initial, onCreated }: QuestionFormProps & { onCr
           </label>
           <select id={`${formId}-skill`} value={skill} onChange={(e) => setSkill(e.target.value as Skill | "")} required>
             <option value="">Choose a skill</option>
-            {SKILLS.map((value) => (
+            {skills.map((value) => (
               <option key={value} value={value}>
                 {value}
               </option>

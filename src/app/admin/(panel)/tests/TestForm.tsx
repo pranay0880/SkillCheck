@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Level, OrderMode, QuestionType } from "@/lib/types";
-import { SKILLS, type Skill } from "@/data/skills";
+import { sortSkills, type Skill } from "@/data/skills";
 import { TYPE_LABEL } from "@/components/ui";
 import { saveTest } from "../../actions";
 
@@ -64,7 +64,7 @@ function TestFormBody({ id, initial, questions, onCreated }: TestFormProps & { o
   const [saved, setSaved] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  const availableSkills = useMemo(() => SKILLS.filter((skill) => questions.some((q) => q.skill === skill)), [questions]);
+  const availableSkills = useMemo(() => sortSkills(questions.map((q) => q.skill)), [questions]);
   const visible = useMemo(
     () =>
       questions.filter(
@@ -80,7 +80,7 @@ function TestFormBody({ id, initial, questions, onCreated }: TestFormProps & { o
   const mcqCount = chosen.filter((q) => q.type === "mcq").length;
   const writtenCount = chosen.filter((q) => q.type === "text").length;
   const codeCount = chosen.filter((q) => q.type === "code").length;
-  const chosenSkills = SKILLS.map((skill) => ({ skill, count: chosen.filter((q) => q.skill === skill).length })).filter(
+  const chosenSkills = sortSkills(chosen.map((q) => q.skill)).map((skill) => ({ skill, count: chosen.filter((q) => q.skill === skill).length })).filter(
     (row) => row.count > 0,
   );
 

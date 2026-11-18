@@ -136,6 +136,33 @@ export interface AnswerRecord {
   savedAt: Date;
 }
 
+export interface SkillDoc {
+  _id?: ObjectId;
+  name: string;
+  key: string;
+  createdAt: Date;
+}
+
+export interface RoleDoc {
+  _id?: ObjectId;
+  name: string;
+  key: string;
+  skills: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CatalogRole {
+  id: string;
+  name: string;
+  skills: string[];
+}
+
+export interface Catalog {
+  skills: string[];
+  roles: CatalogRole[];
+}
+
 export interface UserDoc {
   _id?: ObjectId;
   name: string;

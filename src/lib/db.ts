@@ -1,14 +1,16 @@
 import "server-only";
 import { promises as dnsPromises, setServers } from "node:dns";
 import { MongoClient, type Db, type Collection } from "mongodb";
-import type { QuestionDoc, TestDoc, MemberDoc, UserDoc, OtpDoc } from "./types";
+import type { QuestionDoc, TestDoc, MemberDoc, UserDoc, OtpDoc, RoleDoc, SkillDoc } from "./types";
 
 export const COLLECTIONS = {
   questions: "questions",
   tests: "tests",
-  members: "members",
+  results: "results",
   users: "users",
   otps: "otps",
+  skills: "skills",
+  roles: "roles",
 } as const;
 
 declare global {
@@ -50,8 +52,8 @@ export async function testsCol(): Promise<Collection<TestDoc>> {
   return (await getDb()).collection<TestDoc>(COLLECTIONS.tests);
 }
 
-export async function membersCol(): Promise<Collection<MemberDoc>> {
-  return (await getDb()).collection<MemberDoc>(COLLECTIONS.members);
+export async function resultsCol(): Promise<Collection<MemberDoc>> {
+  return (await getDb()).collection<MemberDoc>(COLLECTIONS.results);
 }
 
 declare global {
@@ -86,4 +88,31 @@ export async function otpsCol(): Promise<Collection<OtpDoc>> {
   });
   await globalThis.__skillcheckOtpIndexes;
   return collection;
+}
+
+declare global {
+  var __skillcheckCatalogIndexes: Promise<unknown> | undefined;
+}
+
+async function catalogIndexes(db: Db): Promise<void> {
+  globalThis.__skillcheckCatalogIndexes ??= Promise.all([
+    db.collection(COLLECTIONS.skills).createIndex({ key: 1 }, { unique: true, name: "unique_skill" }),
+    db.collection(COLLECTIONS.roles).createIndex({ key: 1 }, { unique: true, name: "unique_role" }),
+  ]).catch((error: unknown) => {
+    globalThis.__skillcheckCatalogIndexes = undefined;
+    throw error;
+  });
+  await globalThis.__skillcheckCatalogIndexes;
+}
+
+export async function skillsCol(): Promise<Collection<SkillDoc>> {
+  const db = await getDb();
+  await catalogIndexes(db);
+  return db.collection<SkillDoc>(COLLECTIONS.skills);
+}
+
+export async function rolesCol(): Promise<Collection<RoleDoc>> {
+  const db = await getDb();
+  await catalogIndexes(db);
+  return db.collection<RoleDoc>(COLLECTIONS.roles);
 }

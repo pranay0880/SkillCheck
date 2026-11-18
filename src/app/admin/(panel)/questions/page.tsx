@@ -5,7 +5,8 @@ import type { Filter } from "mongodb";
 import { requireAdmin } from "@/lib/auth";
 import { questionsCol } from "@/lib/db";
 import { LEVELS, QUESTION_TYPES, type QuestionDoc, type QuestionType } from "@/lib/types";
-import { SKILLS } from "@/data/skills";
+import { sortSkills } from "@/data/skills";
+import { loadCatalog } from "@/lib/catalog";
 import { ActionButton } from "@/components/ActionButton";
 import { Empty, LevelBadge, Loading, PageHead, TYPE_LABEL, TypeBadge } from "@/components/ui";
 import { AccordionControls } from "@/components/AccordionControls";
@@ -44,7 +45,7 @@ export default function QuestionsPage({ searchParams }: { searchParams: SearchPa
     <>
       <PageHead
         title="Questions"
-        subtitle="Your question bank, grouped by skill. Questions are reused across tests."
+        subtitle="Your question bank, grouped by skill. Pick a role to see only its skills. Questions are reused across tests."
         actions={
           <>
             <ActionButton action={importQuestionBank} label="Import question bank" pendingLabel="Importing…" className="btn" />
@@ -64,7 +65,8 @@ export default function QuestionsPage({ searchParams }: { searchParams: SearchPa
 async function QuestionList({ searchParams }: { searchParams: SearchParams }) {
   await requireAdmin();
   const params = await searchParams;
-  const skill = pick(params.skill, SKILLS);
+  const catalog = await loadCatalog();
+  const role = catalog.roles.find((item) => item.id === params.role);
   const level = pick(params.level, LEVELS);
   const type = pick(params.type, QUESTION_TYPES);
   const search = typeof params.q === "string" ? params.q.trim().slice(0, 80) : "";
@@ -74,10 +76,14 @@ async function QuestionList({ searchParams }: { searchParams: SearchParams }) {
     .aggregate<{ _id: string; total: number }>([{ $group: { _id: "$skill", total: { $sum: 1 } } }])
     .toArray();
   const countBySkill = new Map(counts.map((row) => [row._id, row.total]));
-  const totalCount = counts.reduce((sum, row) => sum + row.total, 0);
+  const allSkills = sortSkills([...catalog.skills, ...counts.map((row) => row._id)]);
+  const shownSkills = role ? role.skills : allSkills;
+  const skill = pick(params.skill, shownSkills);
+  const totalCount = shownSkills.reduce((sum, name) => sum + (countBySkill.get(name) ?? 0), 0);
 
   const filter: Filter<QuestionDoc> = {};
   if (skill) filter.skill = skill;
+  else if (role) filter.skill = { $in: role.skills };
   if (level) filter.level = level;
   if (type) filter.type = type;
   if (search) filter.title = new RegExp(escapeRegex(search), "i");
@@ -87,11 +93,11 @@ async function QuestionList({ searchParams }: { searchParams: SearchParams }) {
     .sort({ level: 1, type: 1, title: 1 })
     .toArray();
 
-  const groups = SKILLS.map((name) => ({ name, items: questions.filter((question) => question.skill === name) })).filter(
+  const groups = shownSkills.map((name) => ({ name, items: questions.filter((question) => question.skill === name) })).filter(
     (group) => group.items.length > 0,
   );
 
-  const keep = { level, type, q: search || undefined };
+  const keep = { role: role?.id, level, type, q: search || undefined };
   const autoOpen = Boolean(skill || search || level || type);
 
   return (
@@ -102,9 +108,9 @@ async function QuestionList({ searchParams }: { searchParams: SearchParams }) {
           aria-current={!skill ? "page" : undefined}
           className="badge no-underline aria-[current=page]:border-primary aria-[current=page]:bg-primary aria-[current=page]:text-on-primary"
         >
-          All skills · {totalCount}
+          {role ? `All ${role.name} skills` : "All skills"} · {totalCount}
         </Link>
-        {SKILLS.map((name) => (
+        {shownSkills.map((name) => (
           <Link
             key={name}
             href={filterHref({ ...keep, skill: name })}
@@ -118,6 +124,19 @@ async function QuestionList({ searchParams }: { searchParams: SearchParams }) {
 
       <form className="mb-5 flex flex-wrap items-end gap-3" role="search">
         {skill && <input type="hidden" name="skill" value={skill} />}
+        <div>
+          <label className="label mb-1 block" htmlFor="role">
+            Role
+          </label>
+          <select id="role" name="role" defaultValue={role?.id ?? ""}>
+            <option value="">All roles</option>
+            {catalog.roles.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="min-w-[200px] flex-1">
           <label className="label mb-1 block" htmlFor="q">
             Search titles

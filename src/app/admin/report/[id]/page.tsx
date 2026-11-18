@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth";
-import { membersCol, testsCol } from "@/lib/db";
+import { resultsCol, testsCol } from "@/lib/db";
 import { toObjectId } from "@/lib/ids";
 import { loadOrderedQuestions } from "@/lib/candidate";
 import { formatDateTime, formatDuration } from "@/lib/format";
@@ -50,7 +50,7 @@ async function Report({ params }: { params: Promise<{ id: string }> }) {
   await requireAdmin();
   const { id } = await params;
   const objectId = toObjectId(id);
-  const member = objectId ? await (await membersCol()).findOne({ _id: objectId }) : null;
+  const member = objectId ? await (await resultsCol()).findOne({ _id: objectId }) : null;
   if (!member) notFound();
   const test = await (await testsCol()).findOne({ _id: member.testId }, { projection: { title: 1 } });
   const testTitle = test?.title ?? "Deleted test";

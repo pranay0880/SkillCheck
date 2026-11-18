@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import type { ObjectId } from "mongodb";
-import { membersCol, questionsCol, testsCol, usersCol } from "@/lib/db";
+import { resultsCol, questionsCol, testsCol, usersCol } from "@/lib/db";
 import { buildMember } from "@/lib/invites";
 import { isUserInLink } from "@/lib/audience";
 import { checkCode, discardLatestCode, issueCode, OTP_MINUTES } from "@/lib/otp";
@@ -42,7 +42,7 @@ async function resolve(code: string, email: string, employeeId: string): Promise
   if (!isUserInLink(link, user)) {
     return { ok: false, message: `This link is not for you. Contact your admin if you should take “${test.title}”.` };
   }
-  const latest = await (await membersCol()).findOne({ testId: test._id, userId: user._id }, { sort: { createdAt: -1 } });
+  const latest = await (await resultsCol()).findOne({ testId: test._id, userId: user._id }, { sort: { createdAt: -1 } });
   if (latest?.status === "submitted") {
     return { ok: false, message: `You have already submitted “${test.title}”. Contact your admin if you need another attempt.` };
   }
@@ -90,7 +90,7 @@ export async function verifyJoinCode(code: string, _prev: JoinState | null, form
   const checked = await checkCode(resolved.user._id, resolved.test._id, otp.data);
   if (!checked.ok) return slow({ ok: false, step: "code", message: checked.message, ...base });
 
-  const members = await membersCol();
+  const members = await resultsCol();
   let member = await members.findOne(
     { testId: resolved.test._id, userId: resolved.user._id, status: { $ne: "submitted" } },
     { sort: { createdAt: -1 } },

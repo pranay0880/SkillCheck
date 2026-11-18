@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth";
-import { membersCol, testsCol } from "@/lib/db";
+import { resultsCol, testsCol } from "@/lib/db";
 import { formatDateTime } from "@/lib/format";
 import { Empty, Loading, PageHead } from "@/components/ui";
 
@@ -30,7 +30,7 @@ export default function TestsPage() {
 async function TestList() {
   await requireAdmin();
   const tests = await (await testsCol()).find().sort({ createdAt: -1 }).toArray();
-  const counts = await (await membersCol())
+  const counts = await (await resultsCol())
     .aggregate<{ _id: unknown; invited: number; submitted: number }>([
       {
         $group: {

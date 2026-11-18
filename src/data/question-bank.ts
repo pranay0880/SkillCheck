@@ -1,5 +1,6 @@
 import type { Level, McqOption, TestCase } from "../lib/types";
 import type { Skill } from "./skills";
+import { ROLE_BASICS } from "./role-questions.ts";
 
 export interface BankMcq {
   type: "mcq";
@@ -551,4 +552,5 @@ export const QUESTION_BANK: BankQuestion[] = [
   ...ACCESSIBILITY,
   ...SEO,
   ...PERFORMANCE,
+  ...ROLE_BASICS,
 ];

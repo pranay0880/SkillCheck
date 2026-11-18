@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { refresh } from "next/cache";
-import { membersCol, usersCol } from "@/lib/db";
+import { resultsCol, usersCol } from "@/lib/db";
 import { finalizeAttempt, isExpired, loadCandidate, type CandidateContext } from "@/lib/candidate";
 import { isVerifiedFor, startAttemptSession } from "@/lib/candidate-session";
 import { checkCode, discardLatestCode, issueCode, OTP_MINUTES } from "@/lib/otp";
@@ -25,7 +25,7 @@ async function loadVerified(token: string): Promise<CandidateContext | null> {
 async function holdSession(context: CandidateContext, sessionId: string, countConflict: boolean): Promise<boolean> {
   if (!SESSION_ID_PATTERN.test(sessionId) || !context.member._id) return false;
   const now = new Date();
-  const members = await membersCol();
+  const members = await resultsCol();
   const claimed = await members.updateOne(
     {
       _id: context.member._id,
@@ -58,13 +58,13 @@ export async function claimSession(token: string, sessionId: string, firstClaim:
 export async function recordFullscreenExit(token: string, sessionId: string): Promise<void> {
   const context = await loadVerified(token);
   if (context?.member.status !== "in_progress" || !(await holdSession(context, sessionId, false))) return;
-  await (await membersCol()).updateOne({ _id: context.member._id }, { $inc: { fullscreenExits: 1 } });
+  await (await resultsCol()).updateOne({ _id: context.member._id }, { $inc: { fullscreenExits: 1 } });
 }
 
 export async function recordFullscreenUnsupported(token: string): Promise<void> {
   const context = await loadVerified(token);
   if (context?.member.status !== "in_progress") return;
-  await (await membersCol()).updateOne({ _id: context.member._id }, { $set: { fullscreenUnsupported: true } });
+  await (await resultsCol()).updateOne({ _id: context.member._id }, { $set: { fullscreenUnsupported: true } });
 }
 
 export async function startTest(token: string): Promise<ActionResult & { deadline?: string }> {
@@ -74,7 +74,7 @@ export async function startTest(token: string): Promise<ActionResult & { deadlin
   if (member.status === "submitted") return { ok: false, message: "You have already submitted this test." };
   if (member.status === "invited") {
     const startedAt = new Date();
-    await (await membersCol()).updateOne(
+    await (await resultsCol()).updateOne(
       { _id: member._id, status: "invited" },
       { $set: { status: "in_progress", startedAt } },
     );
@@ -102,7 +102,7 @@ export async function saveAnswer(token: string, sessionId: string, questionId: s
   if (!member.questionOrder.some((id) => String(id) === questionId)) {
     return { ok: false, message: "Question not in this test." };
   }
-  await (await membersCol()).updateOne(
+  await (await resultsCol()).updateOne(
     { _id: member._id, status: "in_progress" },
     { $set: { [`answers.${questionId}`]: { ...parsed.data, savedAt: new Date() } } },
   );
@@ -112,7 +112,7 @@ export async function saveAnswer(token: string, sessionId: string, questionId: s
 export async function recordTabSwitch(token: string, sessionId: string): Promise<void> {
   const context = await loadVerified(token);
   if (context?.member.status !== "in_progress" || !(await holdSession(context, sessionId, false))) return;
-  await (await membersCol()).updateOne({ _id: context.member._id }, { $inc: { tabSwitches: 1 } });
+  await (await resultsCol()).updateOne({ _id: context.member._id }, { $inc: { tabSwitches: 1 } });
 }
 
 export async function submitTest(token: string, sessionId: string): Promise<ActionResult & { blocked?: boolean }> {

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth";
+import { loadCatalog } from "@/lib/catalog";
+import { sortSkills } from "@/data/skills";
 import { questionsCol } from "@/lib/db";
 import { toObjectId } from "@/lib/ids";
 import { Loading, PageHead } from "@/components/ui";
@@ -42,5 +44,6 @@ async function Editor({ params }: { params: Promise<{ id: string }> }) {
     markingGuide: question.type === "text" ? question.markingGuide : "",
   };
 
-  return <QuestionForm id={id} initial={initial} />;
+  const { skills } = await loadCatalog();
+  return <QuestionForm id={id} initial={initial} skills={sortSkills([...skills, question.skill])} />;
 }

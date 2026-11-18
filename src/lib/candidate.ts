@@ -1,7 +1,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { connection } from "next/server";
-import { membersCol, questionsCol, testsCol } from "./db";
+import { resultsCol, questionsCol, testsCol } from "./db";
 import { deadlineFor, scoreMcq, SUBMIT_GRACE_MS } from "./scoring";
 import type { MemberDoc, PublicQuestion, QuestionDoc, TestDoc } from "./types";
 
@@ -15,7 +15,7 @@ export interface CandidateContext {
 export async function loadCandidate(token: string): Promise<CandidateContext | null> {
   await connection();
   if (!TOKEN_PATTERN.test(token)) return null;
-  const member = await (await membersCol()).findOne({ token });
+  const member = await (await resultsCol()).findOne({ token });
   if (!member) return null;
   const test = await (await testsCol()).findOne({ _id: member.testId });
   if (!test) return null;
@@ -90,10 +90,10 @@ export async function finalizeAttempt(member: MemberDoc): Promise<MemberDoc> {
       if (!answer) set[`answers.${key}.savedAt`] = new Date();
     }
   }
-  const updated = await (await membersCol()).findOneAndUpdate(
+  const updated = await (await resultsCol()).findOneAndUpdate(
     { _id: member._id, status: "in_progress" },
     { $set: set },
     { returnDocument: "after" },
   );
-  return updated ?? ((await (await membersCol()).findOne({ _id: member._id })) as MemberDoc);
+  return updated ?? ((await (await resultsCol()).findOne({ _id: member._id })) as MemberDoc);
 }

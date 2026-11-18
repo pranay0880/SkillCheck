@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth";
-import { membersCol, testsCol, usersCol } from "@/lib/db";
+import { resultsCol, testsCol, usersCol } from "@/lib/db";
 import { toObjectId } from "@/lib/ids";
 import { loadPickableQuestions } from "@/lib/admin-data";
 import { formatDateTime } from "@/lib/format";
@@ -46,7 +46,7 @@ async function TestDetail({ params }: { params: Promise<{ id: string }> }) {
 
   const [questions, members, users] = await Promise.all([
     loadPickableQuestions(),
-    (await membersCol())
+    (await resultsCol())
       .find(
         { testId: objectId },
         { projection: { userId: 1, name: 1, email: 1, employeeId: 1, role: 1, status: 1, createdAt: 1, startedAt: 1, submittedAt: 1 } },

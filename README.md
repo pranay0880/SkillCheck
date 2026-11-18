@@ -11,11 +11,11 @@ Internal assessment platform for testing developers with **multiple-choice** and
 | --- | --- |
 | Written answers | Descriptive questions answered in a text box (autosaved). They are marked by the admin on the result page, next to an admin-only marking guide. Blank written answers score 0 automatically; the results list shows how many still need marking. |
 | Assessment papers | Four ready-made 55-mark papers (Category 1: Full Stack + CMS, Sets A/B; Category 2: Frontend + CMS, Sets A/B), each 15 one-mark MCQs + 10 three-mark written questions + 2 five-mark JavaScript coding questions (Category 1: one frontend, one backend; Category 2: one JavaScript, one React), in paper order. Defined in `src/data/assessment-sets.ts`; load with `npm run seed:assessments`. |
-| Question bank | Multiple-choice (single or multi-answer), written and coding questions, each tagged with one **skill** and a level (Fresher / Junior). The Questions page groups questions by skill. Includes a 125-question bank covering 19 skills (Admin → Questions → *Import question bank*, or `npm run seed:questions`). |
+| Question bank | Multiple-choice (single or multi-answer), written and coding questions, each tagged with one **skill** and a level (Fresher / Junior). The Questions page groups questions by skill. Includes a 165-question bank: 125 skill questions plus 5 basics for each of the 8 roles (Admin → Questions → *Import question bank*, or `npm run seed:questions`). |
 | Coding questions | Developer writes a JavaScript function in a Monaco editor. Visible test cases can be run while answering; hidden test cases are used for grading only. |
 | Tests | Pick questions and set a time limit. Integrity settings per test: **question order** (fixed, shuffle within sections, or shuffle all; decided per person when they first open the test), **shuffle MCQ options** per person (stable across reloads), and **require fullscreen**. |
 | Integrity | Fullscreen is enforced while answering (questions are hidden outside fullscreen; each exit is logged; skipped and flagged on devices without fullscreen). **One device at a time**: the open test sends a heartbeat every 20 s; opening it in another browser or tab is blocked and logged, and the server rejects answers from the blocked copy (released after about 50 s without a heartbeat). Results show tab switches, fullscreen exits and blocked second-device attempts. The start screen lists recommendations, guidelines and warnings that the employee must acknowledge. |
-| Users | Employee directory (Admin → Users). Required fields: name, employee ID, role, employee email and at least one skill. Employee ID and email must be unique (case-insensitive). Filter by role or skill; each user shows their test history. |
+| Users | Employee directory (Admin → Users). Required fields: name, employee ID, role (picked from Roles & skills), employee email and at least one skill from that catalog. Employee ID and email must be unique (case-insensitive). Filter by role or skill; each user shows their test history. |
 | Test links | Each test can have several links, each with an audience: **all employees**, **role(s)**, or **selected employees**. Opening a link asks for employee email + employee ID, then a **6-digit code emailed via Resend** (10 minutes, 5 tries, rate-limited). After verifying, the attempt is locked to that browser with a signed httpOnly cookie, so a forwarded test URL cannot be used by someone else. *Email this link* sends the invite to everyone in the audience who has not submitted. Links can be turned off or deleted. |
 | Taking a test | Server-enforced timer, autosave, auto-submit at time-out, tab-switch tracking. |
 | Grading | Multiple-choice is scored on submit (all-or-nothing). Code is auto-graded against all test cases when the admin opens the result. The admin can override any mark and add a private note. |
@@ -59,8 +59,10 @@ Open http://localhost:3000/admin and sign in with `ADMIN_PASSWORD`.
 | `questions` | Question bank. MCQ answer keys and hidden test cases live only here. |
 | `tests` | Title, instructions, time limit, ordered question ids, shuffle flag. |
 | `users` | Employee directory: name, employee ID, role, email, skills. Unique indexes on employee ID and email are created automatically. |
+| `skills` | Skill names (unique, case-insensitive). |
+| `roles` | Role names (unique, case-insensitive) and the skills that belong to each role. |
 | `otps` | Hashed one-time codes (deleted after use; expired codes are removed automatically by a TTL index). |
-| `members` | One document per attempt (linked to a user by `userId`, with a copy of their name, employee ID, role and skills): invite token, status (`invited` → `in_progress` → `submitted`), question order, answers, scores, tab switches, timestamps. |
+| `results` | One document per attempt (linked to a user by `userId`, with a copy of their name, employee ID, role and skills): invite token, status (`invited` → `in_progress` → `submitted`), question order, answers, scores, tab switches, timestamps. |
 
 ## How it works (design notes)
 
@@ -73,8 +75,11 @@ Open http://localhost:3000/admin and sign in with `ADMIN_PASSWORD`.
 
 ## Skills and the question bank
 
-- The skill list lives in `src/data/skills.ts`. It is used for question categories and as suggestions for user skills.
+- Roles and skills live in the database and are managed on **Admin → Roles & skills**. Each role lists its skills; the user form offers only the chosen role's skills, the Questions page can filter by role, and the home page shows skills per role.
+- `src/data/skills.ts` holds only the starting roles and skills. The first time the app reads the catalog and the `skills` collection is empty, it seeds those defaults plus any skills and roles already used by questions and users.
+- Renaming a skill or role updates every question, user, attempt and test link that uses it. A skill can be deleted only when no question or user uses it; a role only when no user or role-based test link uses it.
 - The bank lives in `src/data/question-bank.ts`: 3 fresher + 3 junior multiple-choice questions per skill, plus JavaScript coding questions for JavaScript, React, Node.js, Express and REST APIs. Python, SQL and MongoDB are multiple-choice only, because the code sandbox runs JavaScript.
+- `src/data/role-questions.ts` adds 5 basic questions per role (4 multiple choice + 1 written with a marking guide), titled "<Role> basics · Q1–Q5".
 - `npm run check:questions` validates the bank: unique titles, valid answer keys, and every coding test case passes a reference solution.
 - `npm run seed:questions` inserts any bank questions that are missing from the `questions` collection (matched by title). It never overwrites or deletes existing questions, so it is safe to run again.
 

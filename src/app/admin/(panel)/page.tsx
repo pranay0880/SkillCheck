@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth";
-import { membersCol, questionsCol, testsCol, usersCol } from "@/lib/db";
+import { resultsCol, questionsCol, testsCol, usersCol } from "@/lib/db";
 import { formatDateTime } from "@/lib/format";
 import { Empty, Loading, PageHead, Stat, StatusBadge } from "@/components/ui";
 
@@ -21,7 +21,7 @@ export default function DashboardPage() {
 
 async function Dashboard() {
   await requireAdmin();
-  const [questions, tests, members, users] = await Promise.all([questionsCol(), testsCol(), membersCol(), usersCol()]);
+  const [questions, tests, members, users] = await Promise.all([questionsCol(), testsCol(), resultsCol(), usersCol()]);
   const [userCount, questionCount, testCount, invited, inProgress, submitted, recent] = await Promise.all([
     users.countDocuments(),
     questions.countDocuments(),

@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth";
-import { membersCol, testsCol, usersCol } from "@/lib/db";
+import { loadCatalog } from "@/lib/catalog";
+import { resultsCol, testsCol, usersCol } from "@/lib/db";
 import { toObjectId } from "@/lib/ids";
 import { formatDateTime } from "@/lib/format";
 import { Loading, PageHead, StatusBadge } from "@/components/ui";
@@ -26,7 +27,7 @@ async function Editor({ params }: { params: Promise<{ id: string }> }) {
   const user = objectId ? await (await usersCol()).findOne({ _id: objectId }) : null;
   if (!user || !objectId) notFound();
 
-  const attempts = await (await membersCol())
+  const attempts = await (await resultsCol())
     .find({ userId: objectId }, { projection: { testId: 1, status: 1, createdAt: 1, submittedAt: 1 } })
     .sort({ createdAt: -1 })
     .toArray();
@@ -34,6 +35,7 @@ async function Editor({ params }: { params: Promise<{ id: string }> }) {
     .find({ _id: { $in: attempts.map((attempt) => attempt.testId) } }, { projection: { title: 1 } })
     .toArray();
   const titleById = new Map(tests.map((test) => [String(test._id), test.title]));
+  const { roles } = await loadCatalog();
 
   return (
     <>
@@ -42,6 +44,7 @@ async function Editor({ params }: { params: Promise<{ id: string }> }) {
       </p>
       <PageHead title={user.name} subtitle={`${user.employeeId} · ${user.role}`} />
       <UserForm
+        roles={roles}
         id={id}
         initial={{ name: user.name, employeeId: user.employeeId, role: user.role, email: user.email, skills: user.skills }}
       />

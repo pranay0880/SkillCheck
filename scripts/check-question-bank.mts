@@ -1,5 +1,6 @@
 import { QUESTION_BANK } from "../src/data/question-bank.ts";
-import { SKILLS } from "../src/data/skills.ts";
+import { DEFAULT_ROLES, DEFAULT_SKILLS } from "../src/data/skills.ts";
+import { ROLE_BASICS } from "../src/data/role-questions.ts";
 import { ASSESSMENT_SETS } from "../src/data/assessment-sets.ts";
 
 const REFERENCE_SOLUTIONS: Record<string, string> = {
@@ -58,7 +59,7 @@ const perSkill = new Map<string, { fresher: number; junior: number; code: number
 for (const question of QUESTION_BANK) {
   if (titles.has(question.title)) problems.push(`Duplicate title: ${question.title}`);
   titles.add(question.title);
-  if (!(SKILLS as readonly string[]).includes(question.skill)) problems.push(`Unknown skill on ${question.title}`);
+  if (!DEFAULT_SKILLS.includes(question.skill)) problems.push(`Unknown skill on ${question.title}`);
   const counts = perSkill.get(question.skill) ?? { fresher: 0, junior: 0, code: 0 };
   if (question.type === "mcq") {
     counts[question.level] += 1;
@@ -69,6 +70,8 @@ for (const question of QUESTION_BANK) {
   } else if (question.type === "code") {
     counts.code += 1;
     checkCode(question);
+  } else if (!question.markingGuide.trim()) {
+    problems.push(`${question.title}: missing marking guide`);
   }
   perSkill.set(question.skill, counts);
 }
@@ -93,8 +96,18 @@ function checkCode(question: { title: string; functionName: string; testCases: {
   if (!question.testCases.some((testCase) => testCase.hidden)) problems.push(`${question.title} has no hidden case`);
 }
 
-for (const skill of SKILLS) {
-  if (!perSkill.has(skill)) problems.push(`No questions for skill ${skill}`);
+const roleLines: string[] = [];
+for (const role of DEFAULT_ROLES) {
+  const basics = ROLE_BASICS.filter((question) => question.title.startsWith(`${role.name} basics`));
+  const mcqCount = basics.filter((question) => question.type === "mcq").length;
+  const writtenCount = basics.filter((question) => question.type === "text").length;
+  if (mcqCount !== 4 || writtenCount !== 1) {
+    problems.push(`${role.name}: expected 4 MCQ + 1 written basics, found ${mcqCount} + ${writtenCount}`);
+  }
+  for (const question of basics) {
+    if (!role.skills.includes(question.skill)) problems.push(`${question.title}: ${question.skill} is not a ${role.name} skill`);
+  }
+  roleLines.push(`${role.name.padEnd(22)} ${mcqCount} MCQ + ${writtenCount} written`);
 }
 
 const setLines: string[] = [];
@@ -110,7 +123,7 @@ for (const set of ASSESSMENT_SETS) {
   for (const question of set.questions) {
     if (titles.has(question.title)) problems.push(`Duplicate title: ${question.title}`);
     titles.add(question.title);
-    if (!(SKILLS as readonly string[]).includes(question.skill)) problems.push(`Unknown skill on ${question.title}`);
+    if (!DEFAULT_SKILLS.includes(question.skill)) problems.push(`Unknown skill on ${question.title}`);
     if (question.type === "mcq") {
       const ids = new Set(question.options.map((option) => option.id));
       if (question.options.length !== 4) problems.push(`${question.title}: expected 4 options`);
@@ -138,7 +151,7 @@ const lines = [...perSkill.entries()].map(
   ([skill, c]) => `${skill.padEnd(26)} fresher MCQ ${c.fresher}  junior MCQ ${c.junior}  coding ${c.code}`,
 );
 process.stdout.write(
-  `${lines.join("\n")}\n\nTotal bank questions: ${QUESTION_BANK.length}\n\nAssessment papers:\n${setLines.join("\n")}\n`,
+  `${lines.join("\n")}\n\nTotal bank questions: ${QUESTION_BANK.length}\n\nRole basics:\n${roleLines.join("\n")}\n\nAssessment papers:\n${setLines.join("\n")}\n`,
 );
 if (problems.length > 0) {
   process.stderr.write(`\nProblems:\n- ${problems.join("\n- ")}\n`);

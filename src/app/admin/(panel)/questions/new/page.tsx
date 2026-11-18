@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth";
+import { loadCatalog } from "@/lib/catalog";
 import { Loading, PageHead } from "@/components/ui";
 import { QuestionForm } from "../QuestionForm";
 
@@ -19,5 +20,6 @@ export default function NewQuestionPage() {
 
 async function Guarded() {
   await requireAdmin();
-  return <QuestionForm />;
+  const { skills } = await loadCatalog();
+  return <QuestionForm skills={skills} />;
 }

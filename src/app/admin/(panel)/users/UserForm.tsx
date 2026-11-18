@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { SkillsInput } from "@/components/SkillsInput";
-import { ROLE_SUGGESTIONS, SKILL_SUGGESTIONS } from "@/data/user-options";
+import Link from "next/link";
+import type { CatalogRole } from "@/lib/types";
 import { saveUser } from "../../actions";
 
 export interface UserFormValue {
@@ -25,7 +26,7 @@ function Required() {
   );
 }
 
-export function UserForm({ id, initial }: { id?: string; initial?: UserFormValue }) {
+export function UserForm({ id, initial, roles }: { id?: string; initial?: UserFormValue; roles: CatalogRole[] }) {
   const start = initial ?? EMPTY;
   const router = useRouter();
   const [name, setName] = useState(start.name);
@@ -35,6 +36,8 @@ export function UserForm({ id, initial }: { id?: string; initial?: UserFormValue
   const [skills, setSkills] = useState<string[]>(start.skills);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const roleSkills = roles.find((item) => item.name === role)?.skills ?? [];
+  const otherSkills = skills.filter((skill) => !roleSkills.some((item) => item.toLowerCase() === skill.toLowerCase()));
 
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -109,22 +112,24 @@ export function UserForm({ id, initial }: { id?: string; initial?: UserFormValue
             Role
             <Required />
           </label>
-          <input
+          <select
             id="user-role"
-            type="text"
-            list="role-suggestions"
-            autoComplete="off"
             value={role}
             onChange={(e) => setRole(e.target.value)}
-            placeholder="e.g. Frontend Developer"
             required
             aria-required="true"
-          />
-          <datalist id="role-suggestions">
-            {ROLE_SUGGESTIONS.map((suggestion) => (
-              <option key={suggestion} value={suggestion} />
+            aria-describedby="user-role-hint"
+          >
+            <option value="">Choose a role</option>
+            {roles.map((item) => (
+              <option key={item.id} value={item.name}>
+                {item.name}
+              </option>
             ))}
-          </datalist>
+          </select>
+          <span id="user-role-hint" className="hint">
+            Missing a role? Add it on <Link href="/admin/roles">Roles &amp; skills</Link>.
+          </span>
         </div>
         <div className="field">
           <label className="label" htmlFor="user-email">
@@ -156,12 +161,16 @@ export function UserForm({ id, initial }: { id?: string; initial?: UserFormValue
           id="user-skills"
           value={skills}
           onChange={setSkills}
-          suggestions={SKILL_SUGGESTIONS}
+          suggestions={roleSkills}
           describedBy="user-skills-hint"
         />
         <span id="user-skills-hint" className="hint">
-          Skills this person knows. Add at least one.
+          {role ? `Pick from the ${role} skills below. Add at least one.` : "Choose a role first to see its skills."}{" "}
+          Skills must exist on <Link href="/admin/roles">Roles &amp; skills</Link>.
         </span>
+        {role && otherSkills.length > 0 && (
+          <p className="hint mt-1">Not part of {role}: {otherSkills.join(", ")}.</p>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-2">

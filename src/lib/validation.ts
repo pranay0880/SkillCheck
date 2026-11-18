@@ -1,12 +1,11 @@
 import { z } from "zod";
 import { LEVELS, LINK_AUDIENCES, ORDER_MODES } from "./types";
-import { SKILLS } from "@/data/skills";
 
 const baseQuestion = {
   title: z.string().trim().min(3, "Title needs at least 3 characters").max(120),
   prompt: z.string().trim().min(5, "Question text is too short").max(5000),
   level: z.enum(LEVELS),
-  skill: z.enum(SKILLS, "Choose a skill"),
+  skill: z.string().trim().min(1, "Choose a skill").max(60),
   points: z.number().int().min(1).max(100),
 };
 
@@ -107,6 +106,18 @@ export const userSchema = z.object({
     }),
 });
 export type UserInput = z.infer<typeof userSchema>;
+
+export const skillNameSchema = z
+  .string()
+  .trim()
+  .min(1, "Enter a skill name")
+  .max(40, "Skill names must be 40 characters or fewer")
+  .regex(/^[^,]+$/, "Skill names cannot contain commas");
+
+export const roleSchema = z.object({
+  name: z.string().trim().min(2, "Role name needs at least 2 characters").max(60, "Role name is too long"),
+  skills: z.array(z.string().trim().min(1).max(40)).max(60, "Up to 60 skills per role"),
+});
 
 export function firstIssue(error: z.ZodError): string {
   const issue = error.issues[0];
