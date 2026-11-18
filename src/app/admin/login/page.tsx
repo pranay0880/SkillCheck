@@ -16,7 +16,7 @@ export default function LoginPage() {
       footer={
         <>
           Taking a test? Open the link from your email instead.{" "}
-          <Link href="/" className="font-medium" style={{ color: "#a84a2a" }}>
+          <Link href="/" className="font-medium" style={{ color: "#3b5bdb" }}>
             Back to home
           </Link>
         </>

@@ -11,6 +11,10 @@ export const metadata: Metadata = {
 };
 
 const C = WARM;
+const PAGE_BG = "#e8edff";
+const PANEL_BG = "#ffffff";
+const ACCENT = "#3b5bdb";
+const SKILL_COLORS = ["#ddd6f3", "#f6c9bb", "#f7e2a6", "#c9e8d7", "#cfe0f7", "#f4cfe0", "#d9ecc4", "#f9d9b8"];
 
 const STEPS = [
   {
@@ -86,7 +90,7 @@ const FAQ = [
 function SectionTitle({ id, eyebrow, children }: { id: string; eyebrow: string; children: ReactNode }) {
   return (
     <div className="mb-10 text-center">
-      <p className="mb-2 text-sm font-medium uppercase tracking-[0.14em]" style={{ color: C.terracottaDeep }}>
+      <p className="mb-2 text-sm font-medium uppercase tracking-[0.14em]" style={{ color: ACCENT }}>
         {eyebrow}
       </p>
       <h2 id={id} className={`${serif} text-3xl leading-tight sm:text-4xl`} style={{ color: C.ink }}>
@@ -98,7 +102,7 @@ function SectionTitle({ id, eyebrow, children }: { id: string; eyebrow: string; 
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen" style={{ background: C.cream, color: C.ink }}>
+    <div className="min-h-screen" style={{ background: PAGE_BG, color: C.ink }}>
       <header className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-6">
         <Link href="/" className={`${serif} text-2xl no-underline`} style={{ color: C.ink }}>
           SkillCheck
@@ -116,7 +120,7 @@ export default function HomePage() {
           <Link
             href="/admin"
             className="rounded-full px-4 py-1.5 text-sm no-underline"
-            style={{ color: C.ink, border: `1px solid ${C.ink}33`, background: C.paper }}
+            style={{ color: C.ink, border: `1px solid ${C.ink}33`, background: PANEL_BG }}
           >
             Admin
           </Link>
@@ -137,8 +141,7 @@ export default function HomePage() {
           <div className="mb-20 flex flex-wrap items-center justify-center gap-3">
             <a
               href="#before"
-              className="rounded-full px-6 py-3 text-[15px] font-medium text-white no-underline shadow-sm hover:opacity-90"
-              style={{ background: C.terracottaDeep }}
+              className="rounded-full bg-[#3b5bdb] px-6 py-3 text-[15px] font-medium text-white no-underline shadow-sm hover:bg-[#304bc0]"
             >
               Read before you start
             </a>
@@ -149,7 +152,7 @@ export default function HomePage() {
           <Bookshelf />
         </section>
 
-        <section id="how" aria-labelledby="how-title" className="scroll-mt-6 px-6 py-20" style={{ background: C.paper }}>
+        <section id="how" aria-labelledby="how-title" className="scroll-mt-6 px-6 py-20" style={{ background: PANEL_BG }}>
           <div className="mx-auto max-w-6xl">
             <SectionTitle id="how-title" eyebrow="How it works">
               Four simple steps
@@ -173,7 +176,7 @@ export default function HomePage() {
                     </svg>
                   </div>
                   <div className="p-5">
-                    <p className="mb-1 text-sm font-medium" style={{ color: C.terracottaDeep }}>
+                    <p className="mb-1 text-sm font-medium" style={{ color: ACCENT }}>
                       Step {index + 1}
                     </p>
                     <h3 className="mb-1.5 text-lg font-semibold" style={{ color: C.ink }}>
@@ -195,19 +198,15 @@ export default function HomePage() {
               The skills you use every day
             </SectionTitle>
             <ul className="m-0 flex list-none flex-wrap justify-center gap-2.5 p-0">
-              {SKILLS.map((skill, index) => {
-                const colors = [C.terracottaDeep, C.navy, C.mustard, C.tealDeep, C.sage];
-                const background = colors[index % colors.length];
-                return (
-                  <li
-                    key={skill}
-                    className="rounded-md px-4 py-2 text-[15px] font-medium text-white shadow-sm"
-                    style={{ background, color: background === C.mustard || background === C.sage ? C.ink : "#fff" }}
-                  >
-                    {skill}
-                  </li>
-                );
-              })}
+              {SKILLS.map((skill, index) => (
+                <li
+                  key={skill}
+                  className="rounded-md px-4 py-2 text-[15px] font-medium"
+                  style={{ background: SKILL_COLORS[index % SKILL_COLORS.length], color: C.ink }}
+                >
+                  {skill}
+                </li>
+              ))}
             </ul>
             <p className="mt-8 text-center text-[15px]" style={{ color: C.muted }}>
               Questions are multiple choice, short written answers and simple coding tasks in the browser.
@@ -217,7 +216,7 @@ export default function HomePage() {
 
         <section id="before" aria-labelledby="before-title" className="scroll-mt-6 px-6 pb-20">
           <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-2">
-            <div className="rounded-2xl p-8 shadow-[0_2px_12px_rgba(58,46,40,0.06)]" style={{ background: C.paper }}>
+            <div className="rounded-2xl p-8 shadow-[0_2px_12px_rgba(58,46,40,0.06)]" style={{ background: PANEL_BG }}>
               <h2 id="before-title" className={`${serif} mb-6 text-3xl`} style={{ color: C.ink }}>
                 Before you start
               </h2>
@@ -227,7 +226,7 @@ export default function HomePage() {
                     <span
                       aria-hidden="true"
                       className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full text-sm text-white"
-                      style={{ background: C.tealDeep }}
+                      style={{ background: ACCENT }}
                     >
                       ✓
                     </span>
@@ -236,13 +235,13 @@ export default function HomePage() {
                 ))}
               </ul>
             </div>
-            <div className="rounded-2xl p-8 shadow-[0_2px_12px_rgba(58,46,40,0.06)]" style={{ background: C.paper }}>
+            <div className="rounded-2xl p-8 shadow-[0_2px_12px_rgba(58,46,40,0.06)]" style={{ background: PANEL_BG }}>
               <h2 className={`${serif} mb-6 text-3xl`} style={{ color: C.ink }}>
                 Good to know
               </h2>
               <dl className="m-0 space-y-4">
                 {GOOD_TO_KNOW.map((item) => (
-                  <div key={item.title} className="border-l-[3px] pl-4" style={{ borderColor: C.mustard }}>
+                  <div key={item.title} className="border-l-[3px] pl-4" style={{ borderColor: ACCENT }}>
                     <dt className="font-semibold">{item.title}</dt>
                     <dd className="m-0 text-[15px]" style={{ color: C.muted }}>
                       {item.text}
@@ -264,7 +263,7 @@ export default function HomePage() {
                 <details key={item.q} className="group rounded-xl bg-white shadow-[0_2px_10px_rgba(58,46,40,0.05)]">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4 text-[16px] font-medium [&::-webkit-details-marker]:hidden">
                     {item.q}
-                    <span aria-hidden="true" className="text-2xl leading-none transition-transform group-open:rotate-45" style={{ color: C.terracottaDeep }}>
+                    <span aria-hidden="true" className="text-2xl leading-none transition-transform group-open:rotate-45" style={{ color: ACCENT }}>
                       +
                     </span>
                   </summary>

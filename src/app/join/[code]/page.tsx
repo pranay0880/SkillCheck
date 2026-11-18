@@ -48,7 +48,7 @@ async function Join({ params }: { params: Promise<{ code: string }> }) {
         title="Link not active"
         subtitle="This test link isn't valid, or it has been turned off."
         footer={
-          <Link href="/" className="font-medium" style={{ color: "#a84a2a" }}>
+          <Link href="/" className="font-medium" style={{ color: "#3b5bdb" }}>
             Back to home
           </Link>
         }
@@ -64,10 +64,10 @@ async function Join({ params }: { params: Promise<{ code: string }> }) {
       title={test.title}
       subtitle={
         <span className="flex flex-wrap gap-2">
-          <span className="rounded-full px-3 py-1 text-[13px]" style={{ background: "#f5efe4", color: "#3a2e28" }}>
+          <span className="rounded-full px-3 py-1 text-[13px]" style={{ background: "#e8edff", color: "#3a2e28" }}>
             {pluralize(test.questionIds.length, "question")}
           </span>
-          <span className="rounded-full px-3 py-1 text-[13px]" style={{ background: "#f5efe4", color: "#3a2e28" }}>
+          <span className="rounded-full px-3 py-1 text-[13px]" style={{ background: "#e8edff", color: "#3a2e28" }}>
             {test.durationMinutes} minutes
           </span>
         </span>

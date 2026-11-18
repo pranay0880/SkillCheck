@@ -225,33 +225,33 @@
   .auth-form input[type="password"] {
     min-height: 46px;
     border-radius: 10px;
-    border-color: #e2d8c9;
-    background: #fffdf9;
+    border-color: #d6dceb;
+    background: #ffffff;
     padding-left: 0.9rem;
     padding-right: 0.9rem;
   }
 
   .auth-form input:focus-visible {
-    outline: 2px solid #a84a2a;
+    outline: 2px solid #3b5bdb;
     outline-offset: 1px;
-    border-color: #a84a2a;
+    border-color: #3b5bdb;
   }
 
   .auth-form .btn-primary {
     min-height: 46px;
     border-radius: 10px;
-    border-color: #a84a2a;
-    background: #a84a2a;
+    border-color: #3b5bdb;
+    background: #3b5bdb;
     color: #ffffff;
     font-size: 15px;
   }
 
   .auth-form .btn-primary:hover {
-    background: #8f3e22;
+    background: #304bc0;
   }
 
   .auth-form .text-primary {
-    color: #a84a2a;
+    color: #3b5bdb;
   }
 }
 

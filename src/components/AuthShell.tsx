@@ -28,9 +28,9 @@ interface AuthShellProps {
 
 export function AuthShell({ sideTitle, sideText, sidePoints, title, subtitle, children, footer }: AuthShellProps) {
   return (
-    <div className="grid min-h-screen place-items-center px-4 py-8 sm:py-12" style={{ background: WARM.cream, color: WARM.ink }}>
+    <div className="grid min-h-screen place-items-center px-4 py-8 sm:py-12" style={{ background: "#e8edff", color: WARM.ink }}>
       <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-[0_24px_60px_-28px_rgba(58,46,40,0.35)] md:grid-cols-[1fr_1.05fr]">
-        <aside className="relative flex flex-col justify-between gap-8 p-7 sm:p-10" style={{ background: WARM.paper }}>
+        <aside className="relative flex flex-col justify-between gap-8 p-7 sm:p-10" style={{ background: "#f3f6ff" }}>
           <Link href="/" className={`${serif} w-fit text-2xl no-underline`} style={{ color: WARM.ink }}>
             SkillCheck
           </Link>
@@ -51,7 +51,7 @@ export function AuthShell({ sideTitle, sideText, sidePoints, title, subtitle, ch
                     <span
                       aria-hidden="true"
                       className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full text-[11px] text-white"
-                      style={{ background: WARM.tealDeep }}
+                      style={{ background: "#3b5bdb" }}
                     >
                       ✓
                     </span>
