@@ -155,6 +155,18 @@ async function Report({ params }: { params: Promise<{ id: string }> }) {
         )}
       </section>
 
+      {member.overallComment && (
+        <section
+          aria-labelledby="overall-comment"
+          className="mb-6 break-inside-avoid rounded-md border border-l-4 border-[#c7d2fe] border-l-[#3b5bdb] bg-[#eef2ff] px-4 py-3"
+        >
+          <h2 id="overall-comment" className="mb-2 text-lg text-[#2b44a8]">
+            Examiner&apos;s comment
+          </h2>
+          <p className="m-0 whitespace-pre-wrap text-[15px] leading-relaxed text-[#1f2937]">{member.overallComment}</p>
+        </section>
+      )}
+
       <section aria-labelledby="integrity" className="mb-6 break-inside-avoid">
         <h2 id="integrity" className="mb-2 text-lg">
           Integrity

@@ -89,6 +89,16 @@ const LINKS: { href: string; label: string; icon: ReactNode }[] = [
       </Icon>
     ),
   },
+  {
+    href: "/admin/feedback",
+    label: "Feedback",
+    icon: (
+      <Icon>
+        <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-5A8 8 0 1 1 21 12z" />
+        <path d="M8.5 10.5h7M8.5 14h4" />
+      </Icon>
+    ),
+  },
 ];
 
 interface NavProps {

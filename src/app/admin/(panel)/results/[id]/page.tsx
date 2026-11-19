@@ -15,6 +15,7 @@ import { LevelBadge, Loading, PageHead, Stat, StatusBadge } from "@/components/u
 import { deleteMember } from "../../../actions";
 import { CodeGrader, type GradeItem } from "./CodeGrader";
 import { ManualScore } from "./ManualScore";
+import { OverallComment } from "./OverallComment";
 
 export const metadata: Metadata = { title: "Review" };
 
@@ -142,6 +143,14 @@ async function Review({ params }: { params: Promise<{ id: string }> }) {
           {score.pendingWrittenCount === 1 ? "s" : ""} your mark. Enter a mark under each one (marked “Not graded”); the total
           updates as you save.
         </p>
+      )}
+
+      {member.status === "submitted" && (
+        <OverallComment
+          memberId={id}
+          comment={member.overallComment}
+          savedAt={member.overallCommentAt ? formatDateTime(member.overallCommentAt) : undefined}
+        />
       )}
 
       <h2 className="mb-3 mt-6">Answers</h2>

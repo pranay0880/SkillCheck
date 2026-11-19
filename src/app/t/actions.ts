@@ -8,7 +8,7 @@ import { isVerifiedFor, startAttemptSession } from "@/lib/candidate-session";
 import { checkCode, discardLatestCode, issueCode, OTP_MINUTES } from "@/lib/otp";
 import { canShowDevCode, maskEmail, otpEmail, sendEmail } from "@/lib/email";
 import { deadlineFor } from "@/lib/scoring";
-import { firstIssue, otpCodeSchema } from "@/lib/validation";
+import { feedbackSchema, firstIssue, otpCodeSchema } from "@/lib/validation";
 import { TEXT_ANSWER_MAX_LENGTH, type ActionResult } from "@/lib/types";
 
 const NOT_VERIFIED = "Your session has expired. Reload the page and verify again with the code sent to your email.";
@@ -123,6 +123,22 @@ export async function submitTest(token: string, sessionId: string): Promise<Acti
     return { ok: false, blocked: true, message: OTHER_DEVICE };
   }
   await finalizeAttempt(context.member);
+  return { ok: true };
+}
+
+export async function submitFeedback(token: string, input: unknown): Promise<ActionResult> {
+  const context = await loadVerified(token);
+  if (!context) return { ok: false, message: NOT_VERIFIED };
+  if (context.member.status !== "submitted") return { ok: false, message: "Submit the test before giving feedback." };
+  const parsed = feedbackSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, message: firstIssue(parsed.error) };
+  const { comment, ...rest } = parsed.data;
+  const saved = await (await resultsCol()).updateOne(
+    { _id: context.member._id, status: "submitted", feedback: { $exists: false } },
+    { $set: { feedback: { ...rest, ...(comment ? { comment } : {}), submittedAt: new Date() } } },
+  );
+  if (saved.matchedCount === 0) return { ok: false, message: "Feedback has already been sent for this test." };
+  refresh();
   return { ok: true };
 }
 

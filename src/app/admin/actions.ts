@@ -13,7 +13,7 @@ import { CATALOG_TAG, ensureSkills, findRoleName, resolveSkills } from "@/lib/ca
 import { inviteEmail, isEmailConfigured, sendBatch } from "@/lib/email";
 import { firstIssue, questionSchema, testLinkSchema, testSchema, userSchema } from "@/lib/validation";
 import { QUESTION_BANK } from "@/data/question-bank";
-import type { ActionResult, QuestionDoc, TestLink } from "@/lib/types";
+import { OVERALL_COMMENT_LIMIT, type ActionResult, type QuestionDoc, type TestLink } from "@/lib/types";
 
 export async function login(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
   const password = String(formData.get("password") ?? "");
@@ -326,6 +326,23 @@ export async function saveCodeGrades(memberId: string, input: unknown): Promise<
   await members.updateOne({ _id: memberObjectId }, { $set: set });
   refresh();
   return { ok: true };
+}
+
+export async function saveOverallComment(memberId: string, comment: string): Promise<ActionResult> {
+  await requireAdmin();
+  const memberObjectId = toObjectId(memberId);
+  if (!memberObjectId) return { ok: false, message: "Not found." };
+  const text = comment.trim();
+  if (text.length > OVERALL_COMMENT_LIMIT) {
+    return { ok: false, message: `Keep the comment under ${OVERALL_COMMENT_LIMIT} characters.` };
+  }
+  const update = text
+    ? { $set: { overallComment: text, overallCommentAt: new Date() } }
+    : { $unset: { overallComment: true as const, overallCommentAt: true as const } };
+  const result = await (await resultsCol()).updateOne({ _id: memberObjectId }, update);
+  if (result.matchedCount === 0) return { ok: false, message: "Result not found." };
+  refresh();
+  return { ok: true, message: text ? "Comment saved." : "Comment removed." };
 }
 
 export async function setManualScore(

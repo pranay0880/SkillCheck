@@ -25,6 +25,7 @@ const HEADER = [
   "Invited",
   "Started",
   "Submitted",
+  "Examiner comment",
 ];
 
 export async function GET(request: NextRequest) {
@@ -58,6 +59,7 @@ export async function GET(request: NextRequest) {
         formatDateTime(member.createdAt),
         formatDateTime(member.startedAt),
         formatDateTime(member.submittedAt),
+        member.overallComment,
       ];
     }),
   );

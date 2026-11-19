@@ -175,6 +175,40 @@ export interface UserDoc {
   updatedAt: Date;
 }
 
+export const OVERALL_COMMENT_LIMIT = 2000;
+
+export const FEEDBACK_COMMENT_LIMIT = 1000;
+export const FEEDBACK_RATINGS = [1, 2, 3, 4, 5] as const;
+export const FEEDBACK_RATING_LABEL: Record<number, string> = {
+  1: "Very poor",
+  2: "Poor",
+  3: "Okay",
+  4: "Good",
+  5: "Excellent",
+};
+export const FEEDBACK_DIFFICULTIES = ["too_easy", "about_right", "too_hard"] as const;
+export type FeedbackDifficulty = (typeof FEEDBACK_DIFFICULTIES)[number];
+export const FEEDBACK_DIFFICULTY_LABEL: Record<FeedbackDifficulty, string> = {
+  too_easy: "Too easy",
+  about_right: "About right",
+  too_hard: "Too hard",
+};
+export const FEEDBACK_TIMINGS = ["not_enough", "about_right", "too_much"] as const;
+export type FeedbackTiming = (typeof FEEDBACK_TIMINGS)[number];
+export const FEEDBACK_TIMING_LABEL: Record<FeedbackTiming, string> = {
+  not_enough: "Not enough time",
+  about_right: "About right",
+  too_much: "More than enough",
+};
+
+export interface CandidateFeedback {
+  rating: number;
+  difficulty: FeedbackDifficulty;
+  timing: FeedbackTiming;
+  comment?: string;
+  submittedAt: Date;
+}
+
 export interface MemberDoc {
   _id?: ObjectId;
   userId?: ObjectId;
@@ -197,6 +231,9 @@ export interface MemberDoc {
   startedAt?: Date;
   submittedAt?: Date;
   codeGradedAt?: Date;
+  overallComment?: string;
+  feedback?: CandidateFeedback;
+  overallCommentAt?: Date;
   createdAt: Date;
 }
 

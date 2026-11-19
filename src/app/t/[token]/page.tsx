@@ -10,6 +10,7 @@ import { isVerifiedFor } from "@/lib/candidate-session";
 import { resolveTestSettings } from "@/lib/types";
 import { StartPanel } from "./StartPanel";
 import { VerifyPanel } from "./VerifyPanel";
+import { FeedbackForm } from "./FeedbackForm";
 import { TestRunner, type SavedAnswer } from "./TestRunner";
 
 export const metadata: Metadata = { title: "Assessment", referrer: "no-referrer" };
@@ -33,7 +34,7 @@ export default function CandidatePage({ params }: PageProps<"/t/[token]">) {
 
 function Notice({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="card mx-auto max-w-xl">
+    <div className="card mx-auto max-w-2xl">
       <h1 className="mb-2 text-xl">{title}</h1>
       <div className="text-muted">{children}</div>
     </div>
@@ -54,15 +55,23 @@ async function Candidate({ params }: { params: Promise<{ token: string }> }) {
   const verified = await isVerifiedFor(member._id);
 
   if (member.status === "submitted") {
+    const askFeedback = verified && !member.feedback;
     return (
       <Notice title="Test submitted">
         <p>
           {verified ? `Thanks, ${member.name}. ` : ""}The answers for “{test.title}” have been submitted. Your reviewer will share the
           results with you.
         </p>
-        <Link href="/" className="btn btn-primary mt-4 no-underline">
-          Go to home page
-        </Link>
+        {askFeedback ? (
+          <FeedbackForm token={token} />
+        ) : (
+          <>
+            {member.feedback && <p className="alert alert-success mt-4">Thanks for your feedback. It helps us improve these tests.</p>}
+            <Link href="/" className="btn btn-primary mt-4 no-underline">
+              Go to home page
+            </Link>
+          </>
+        )}
       </Notice>
     );
   }

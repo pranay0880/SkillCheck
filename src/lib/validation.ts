@@ -1,5 +1,12 @@
 import { z } from "zod";
-import { LEVELS, LINK_AUDIENCES, ORDER_MODES } from "./types";
+import {
+  FEEDBACK_COMMENT_LIMIT,
+  FEEDBACK_DIFFICULTIES,
+  FEEDBACK_TIMINGS,
+  LEVELS,
+  LINK_AUDIENCES,
+  ORDER_MODES,
+} from "./types";
 
 const baseQuestion = {
   title: z.string().trim().min(3, "Title needs at least 3 characters").max(120),
@@ -117,6 +124,13 @@ export const skillNameSchema = z
 export const roleSchema = z.object({
   name: z.string().trim().min(2, "Role name needs at least 2 characters").max(60, "Role name is too long"),
   skills: z.array(z.string().trim().min(1).max(40)).max(60, "Up to 60 skills per role"),
+});
+
+export const feedbackSchema = z.object({
+  rating: z.coerce.number({ message: "Choose a rating" }).int().min(1, "Choose a rating").max(5, "Choose a rating"),
+  difficulty: z.enum(FEEDBACK_DIFFICULTIES, { message: "Choose how difficult the test was" }),
+  timing: z.enum(FEEDBACK_TIMINGS, { message: "Choose how the time felt" }),
+  comment: z.string().trim().max(FEEDBACK_COMMENT_LIMIT, `Keep comments under ${FEEDBACK_COMMENT_LIMIT} characters`).optional(),
 });
 
 export function firstIssue(error: z.ZodError): string {
